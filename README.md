@@ -23,6 +23,7 @@ StoryOps Studio was designed for the IBM AI Builders Challenge 2026 theme
 - Live frontend: [storyops.ukexe06.workers.dev](https://storyops.ukexe06.workers.dev)
 - Live API: [storyops-api.ukexe06.workers.dev](https://storyops-api.ukexe06.workers.dev/health)
 - GitHub: [ukexe/Storyops_studio](https://github.com/ukexe/Storyops_studio)
+- Release: [v1.1.0](https://github.com/ukexe/Storyops_studio/releases/tag/v1.1.0)
 
 ## Product capabilities
 

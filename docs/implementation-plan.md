@@ -494,7 +494,8 @@ The demo data in `backend/demo/` must be compelling:
 - [x] Verify full demo flow against deployed Cloudflare frontend and REST adapter
 - [x] Prepare the local `v1.0.0` release commit and annotated tag
 - [x] Push the release tag to GitHub
-- [ ] Publish the GitHub Release and add the demo video URL
+- [x] Publish the v1.1.0 GitHub Release
+- [ ] Add the public demo video URL
 
 **Relevant Context:** `docs/research.md` → IBM Bob Usage Strategy, Demo Script, Judging Strategy, README Structure; IBM Bob evidence is a judging criterion per `AGENTS.md`
 

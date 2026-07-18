@@ -724,7 +724,8 @@ app and **Seed demo** works end to end.
   frontend, API, Supabase Auth, Postgres, and private Storage
 - [x] Prepare the local `v1.0.0` release commit and annotated tag
 - [x] Push the `v1.0.0` tag
-- [ ] Publish a GitHub Release after GitHub CLI/API authentication is available
+- [x] Publish the
+  [v1.1.0 GitHub Release](https://github.com/ukexe/Storyops_studio/releases/tag/v1.1.0)
 - [ ] Add the public demo video URL to README and release notes
 
 **Production status:** Cloudflare frontend/API, Supabase schema/Auth/private

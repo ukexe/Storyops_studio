@@ -211,8 +211,7 @@ Updated:
    credentials and deploy the canonical FastAPI service to demonstrate real
    Granite inference in production.
 2. Publish the public demo video URL.
-3. Publish the GitHub Release after the v1.1.0 commit/tag is pushed.
-4. Exercise a real email-delivery confirmation link with an inbox under the
+3. Exercise a real email-delivery confirmation link with an inbox under the
    final project domain.
 
 These are account/credential or submission-media gates, not missing repository
