@@ -1,0 +1,61 @@
+[HOOK]
+
+AI is changing creative work, and a lot of teams are trying to understand what
+that means.
+
+Some people expect one prompt to produce a finished campaign. Others avoid AI
+completely because they do not want their work to become generic. Both reactions
+miss the most useful opportunity.
+
+[MAIN POINT 1 — THE REAL BOTTLENECK]
+
+Think about the last video your team shipped. The brief lived in one document,
+the script moved through three versions, thumbnails arrived in a shared folder,
+and feedback was scattered across messages. The edit itself may have taken a
+day, but coordinating every decision around it took a week.
+
+That is where AI can help without taking over the creative idea.
+
+Instead of asking one model to "make the video," give specialized agents narrow
+jobs. A Brief Agent can turn a loose request into objectives, constraints, and
+open questions. A Script Agent can check whether the opening earns attention,
+whether the pace changes, and whether the ending gives the audience a clear
+next step. An Asset Agent can review a thumbnail for hierarchy, legibility, and
+brand consistency.
+
+Each agent returns evidence and recommendations. The producer still decides
+what changes.
+
+[MAIN POINT 2 — START WITH A WORKFLOW, NOT A TOOL]
+
+Here is a practical way to begin.
+
+First, choose one bottleneck you can measure. Maybe your team loses two hours
+every week translating feedback into tasks. Maybe scripts reach the edit before
+anyone checks the hook. Pick one.
+
+Second, define the handoff. What information does the agent receive? What
+structured output must it return? Who approves the result? Clear boundaries are
+more valuable than a clever prompt.
+
+Third, keep the work in one pipeline. When the brief, script, asset review, and
+resulting tasks stay connected, the team can see why a decision was made. That
+history also creates a learning loop: after publishing, compare retention and
+click-through data with the choices made earlier.
+
+[EXAMPLE]
+
+Imagine a small YouTube team preparing an explainer. StoryOps Studio flags that
+the brief never defines a distribution channel. It scores the script's opening
+as weak because the benefit appears thirty seconds late. Then it notices the
+thumbnail logo has been stretched. Three focused agents create three concrete
+tasks before those problems become expensive revisions.
+
+The AI did not invent the team's point of view. It protected the workflow around
+that point of view.
+
+[CTA]
+
+That is the basic idea: use AI to reduce coordination friction, keep humans in
+control of creative judgment, and improve one stage at a time. Thanks for
+watching.

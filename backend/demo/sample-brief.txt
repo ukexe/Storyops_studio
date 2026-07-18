@@ -1,0 +1,56 @@
+VIDEO BRIEF
+
+Working title
+How AI Is Changing Creative Work (And What You Should Do About It)
+
+Purpose
+Create a practical, optimistic explainer that helps small creative teams move
+past the "AI replaces creativity" debate and identify useful workflow changes
+they can make now.
+
+Target audience
+- Independent creators and two-to-ten-person content teams
+- Agency producers, editors, and creative strategists
+- Viewers who have experimented with generative AI but do not have a repeatable
+  operating process
+
+Audience insight
+The audience is curious about AI but overwhelmed by new tools. They care more
+about protecting quality, originality, and time than generating a higher volume
+of generic content.
+
+Primary objective
+Show that the highest-value use of AI is coordinating creative work: turning
+briefs into clear plans, checking consistency, and learning from performance.
+
+Key messages
+1. AI should remove coordination friction, not replace creative judgment.
+2. Specialized agents can review briefs, scripts, and assets at different
+   stages of production.
+3. Teams should start with one measurable bottleneck and keep a human approval
+   point in every workflow.
+
+Tone and style
+Confident, grounded, and creator-first. Avoid hype, fear, and unexplained
+technical jargon. Use one concrete example from a YouTube production workflow.
+
+Desired length
+Approximately three minutes, with enough visual changes to support a brisk
+explainer pace.
+
+Required deliverables
+- One 16:9 hero video
+- One thumbnail
+- Three short pull quotes for reuse
+
+Constraints
+- Do not claim that AI can predict virality.
+- Do not show confidential client work or unlicensed brand assets.
+- Keep the StoryOps Studio product mention educational rather than sales-led.
+
+Success signal
+Viewers should be able to name one creative-operations task they would delegate
+to an AI agent while retaining final creative control.
+
+Distribution plan
+To be confirmed with the campaign owner.
