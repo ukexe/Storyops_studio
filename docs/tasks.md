@@ -708,7 +708,8 @@
   9. Mark one task "In Progress"; verify it moves column
 - [x] Run local CI-equivalent, migration, dependency, frontend build, and Docker smoke checks
 - [ ] Run the authenticated walkthrough against deployed Vercel and Render services
-- [ ] Publish the `v1.0.0` tag and release after GitHub authentication is available
+- [x] Prepare the local `v1.0.0` release commit and annotated tag
+- [ ] Push the `v1.0.0` tag and publish a GitHub Release after authentication is available
 - [ ] Add the public demo video URL to README and release notes
 
 ---
