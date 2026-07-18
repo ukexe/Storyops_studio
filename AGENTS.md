@@ -6,10 +6,10 @@ This file provides guidance to agents when working with code in this repository.
 
 **StoryOps Studio** — an agentic AI creative operations platform built for the IBM AI Builders Challenge (July 2026 theme: *Reimagine Creative Industries with AI*). It turns fragmented creative production workflows (briefs, scripts, assets, edits, feedback) into a unified, insight-driven pipeline using IBM Bob, watsonx.ai, and Granite models.
 
-**Status:** StoryOps Studio v1.0.0 is a locally validated release candidate.
-Application, agent, security, CI, Docker, Cloudflare, Render, and documentation
-artifacts are complete. Public deployment and live-service acceptance require
-the project owner's GitHub, Render, Supabase, and watsonx credentials.
+**Status:** StoryOps Studio v1.0.0 is published to GitHub and the Next.js
+frontend is live at `https://storyops.ukexe06.workers.dev`. Supabase Auth is
+verified. Full dashboard and agent workflows still require the production
+FastAPI deployment and initialized Supabase application tables.
 
 ## Planned Stack
 

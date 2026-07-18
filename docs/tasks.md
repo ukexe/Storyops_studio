@@ -615,7 +615,7 @@
           working-directory: frontend
   ```
 - [x] Validate workflows with actionlint and run all CI commands locally
-- [ ] Confirm both workflows pass on GitHub `main` after a remote is connected
+- [x] Confirm both workflows pass on GitHub `main`
 
 ---
 
@@ -689,7 +689,7 @@
 - [x] Write **Demo Script** section with Seed demo entry point
 - [x] Add release, local validation, and license badges
 - [x] Add the live Cloudflare deployment badge
-- [ ] Add live GitHub Actions badges after the remote workflow run
+- [x] Add live GitHub Actions badges
 
 ---
 
@@ -712,7 +712,8 @@
 - [x] Run local CI-equivalent, migration, dependency, frontend build, and Docker smoke checks
 - [ ] Run the full authenticated walkthrough against deployed Cloudflare and Render services
 - [x] Prepare the local `v1.0.0` release commit and annotated tag
-- [ ] Push the `v1.0.0` tag and publish a GitHub Release after authentication is available
+- [x] Push the `v1.0.0` tag
+- [ ] Publish a GitHub Release after GitHub CLI/API authentication is available
 - [ ] Add the public demo video URL to README and release notes
 
 ---

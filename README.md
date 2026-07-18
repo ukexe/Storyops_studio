@@ -1,8 +1,8 @@
 # StoryOps Studio
 
 [![Release](https://img.shields.io/badge/release-v1.0.0-111827)](#release-status)
-[![Backend tests](https://img.shields.io/badge/backend%20tests-30%20passing-16a34a)](#validation)
-[![Frontend build](https://img.shields.io/badge/frontend-build%20passing-16a34a)](#validation)
+[![Backend CI](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml)
 [![Live on Cloudflare](https://img.shields.io/badge/live-Cloudflare%20Workers-f97316)](https://storyops.ukexe06.workers.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2563eb)](LICENSE)
 
@@ -19,6 +19,9 @@ recommendations become linked tasks that teams can manage through completion.
 
 StoryOps Studio was designed for the IBM AI Builders Challenge 2026 theme
 **Reimagine Creative Industries with AI**.
+
+- Live frontend: [storyops.ukexe06.workers.dev](https://storyops.ukexe06.workers.dev)
+- GitHub: [ukexe/Storyops_studio](https://github.com/ukexe/Storyops_studio)
 
 ## Product capabilities
 
