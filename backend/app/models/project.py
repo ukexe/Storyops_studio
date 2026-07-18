@@ -25,3 +25,4 @@ class Project(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     repo_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    demo_version: Mapped[str | None] = mapped_column(String(50), nullable=True)

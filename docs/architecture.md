@@ -1,6 +1,6 @@
 # StoryOps Studio Architecture
 
-> Release architecture for StoryOps Studio v1.0.0.
+> Release architecture for StoryOps Studio v1.1.0.
 
 ## System architecture
 
@@ -11,41 +11,46 @@ Browser
   ▼
 Cloudflare Workers — Next.js 16 through OpenNext
   ├─ Supabase Auth browser/server clients
-  ├─ Next.js Proxy session refresh and route protection
+  ├─ Next.js middleware session refresh and route protection
   ├─ Dashboard, pipeline, item analysis, and task board
   └─ Typed REST client with Supabase bearer token
   │
   │ HTTPS + Authorization: Bearer <Supabase JWT>
   ▼
-Render — FastAPI
-  ├─ JWT/JWKS authentication and project ownership checks
-  ├─ Project, item, analysis, task, and demo routers
-  ├─ Agent dispatcher and synchronous analysis
-  └─ Supabase Storage secret-key client
-  │                         │
-  ├─ async SQLAlchemy       └─ IBM watsonx.ai SDK
-  ▼                              ▼
-Supabase Postgres          Granite models
+Cloudflare Worker — production REST adapter
+  ├─ Supabase session validation and project ownership checks
+  ├─ Project, item, analysis, task, and demo routes
+  ├─ Deterministic edge-agent fallback
+  └─ Supabase PostgREST and private Storage client
+  │
+  ▼
+Supabase Postgres
   ├─ projects              ├─ Granite Instruct
   ├─ items                 └─ Granite Vision
   ├─ analyses
   └─ tasks
 
 Supabase Storage
-  └─ public assets bucket (project-scoped object paths)
+  └─ private assets bucket (project-scoped object paths + signed reads)
+
+Canonical FastAPI deployment
+  ├─ async SQLAlchemy → Supabase Postgres
+  ├─ JWT/JWKS authentication
+  └─ IBM watsonx.ai SDK → Granite Instruct and Vision
 ```
 
-The frontend never receives database credentials or the Supabase secret
-key. It authenticates with Supabase Auth and sends the resulting JWT to FastAPI.
-FastAPI is the only application component authorized to access the four
-database tables.
+The frontend never receives database credentials or the Supabase secret key.
+It authenticates with Supabase Auth and sends the resulting JWT to the REST
+adapter. Only backend runtimes—the live adapter or canonical FastAPI service—
+can access the four application tables.
 
 ## Repository layout
 
 - `frontend/` — Next.js App Router application, shadcn/ui components, typed API
   client, and Supabase SSR integration.
 - `backend/` — FastAPI API, SQLAlchemy models, Alembic migrations, agents,
-  storage integration, demo fixtures, and tests.
+  storage integration, demo fixtures, tests, and the `cloudflare/` production
+  REST adapter.
 - `docs/` — product research, implementation plan, architecture, task state,
   and demo walkthrough.
 - `.github/workflows/` — independent backend and frontend validation.
@@ -62,8 +67,9 @@ database tables.
 - `/projects/[id]` — seven-stage pipeline.
 - `/projects/[id]/items/[itemId]` — content preview and AI analysis.
 - `/projects/[id]/tasks` — AI-generated task board.
+- `/settings` — live service, analysis-mode, and security-boundary status.
 
-`frontend/proxy.ts` is the Next.js 16 Proxy entry point. It refreshes Supabase
+`frontend/middleware.ts` is the edge session entry point. It refreshes Supabase
 cookies, redirects unauthenticated protected routes to login, and prevents
 authenticated users from returning to login or registration.
 
@@ -90,6 +96,17 @@ Interactive controls expose labels, pressed/busy states, focus indicators, and
 polite live announcements.
 
 ## Backend architecture
+
+### Production REST adapter
+
+`backend/cloudflare/src/index.ts` is the live API implementation. It preserves
+the FastAPI response contract while using Supabase Auth, PostgREST, and Storage
+from a standard Cloudflare Worker. Every resource lookup includes an ownership
+check. Its deterministic analyses are labeled with `storyops/edge-*` ruleset
+IDs, and `/health` reports `analysis_mode: "edge-rules"` rather than
+misrepresenting them as Granite output.
+
+### Canonical FastAPI service
 
 ### Application lifecycle
 
@@ -223,24 +240,29 @@ item type, task status, and task priority values.
 
 ## Storage
 
-Uploads are limited to 10 MB and accepted only for asset items. The backend
-validates image magic bytes, generates project-scoped object names, and uses the
-Supabase secret-key client. Granite Vision fetches only URLs matching the
-configured Supabase host and public `assets` path, without redirects.
-
-The `assets` bucket must be provisioned as publicly readable because the
-frontend and Granite Vision consume public URLs. Database tables remain
-inaccessible to browser roles.
+Uploads are limited to 10 MB and accepted only for asset items. Both backend
+implementations validate image magic bytes and generate project-scoped object
+names. The `assets` bucket is private. API responses contain one-hour signed
+read URLs; the database stores only the object path. The FastAPI Asset Agent
+downloads private objects through the secret-key client and accepts legacy
+public URLs only from the configured Supabase host without redirects.
 
 ## Deployment
 
-### Backend
+### Live API
+
+- Cloudflare Worker configuration: `backend/cloudflare/wrangler.jsonc`.
+- Live API: `https://storyops-api.ukexe06.workers.dev`.
+- Backend-only Supabase secret configured as a Worker secret.
+- Deterministic fallback agents keep every workflow functional without
+  claiming unavailable IBM inference.
+
+### Canonical FastAPI backend
 
 - Dockerized Python 3.11 service.
 - Non-root runtime user.
 - `.dockerignore` excludes credentials, caches, tests, and virtual environments.
-- Render Blueprint uses `backend/` as its root, runs Alembic before deploy,
-  checks `/health`, and deploys only after repository checks pass.
+- Render Blueprint remains available for a Python host with watsonx credentials.
 - Uvicorn reads Render's `$PORT`.
 
 ### Frontend
@@ -248,16 +270,20 @@ inaccessible to browser roles.
 - Cloudflare Worker configuration: `frontend/wrangler.jsonc`.
 - OpenNext configuration: `frontend/open-next.config.ts`.
 - Live frontend: `https://storyops.ukexe06.workers.dev`.
+- Production API URL:
+  `https://storyops-api.ukexe06.workers.dev/api/v1`.
 - Node.js 22.13 or newer.
 - Build fails when required public configuration is absent.
-- Supabase Auth redirect URLs must include the deployed `/auth/confirm` route.
+- Supabase Auth Site URL and allow-list include the deployed `/auth/confirm`
+  route.
 
 ## Failure behavior
 
 - Database startup failure: API process remains observable through `/live`, but
   `/health` returns `503`.
-- watsonx unavailable: CRUD remains usable; health reports the AI error and
-  analysis endpoints return a sanitized gateway error.
+- watsonx unavailable: the live adapter explicitly reports `edge-rules` mode;
+  the canonical FastAPI service keeps CRUD healthy and returns a sanitized
+  gateway error for Granite-only requests.
 - Invalid model JSON: no analysis or tasks are committed.
 - Demo seed failure: the database transaction is rolled back and the uploaded
   demo thumbnail is cleaned up.
@@ -303,7 +329,9 @@ where required by the judging rules.
 - Public: landing page, auth pages, `/live`, and `/health`.
 - Authenticated: projects, items, analyses, tasks, and demo seeding.
 - Secret: Supabase secret key, database URL, and watsonx credentials.
-- Browser-visible by design: Supabase project URL, publishable key, and backend API URL.
+- Browser-visible by design: Supabase project URL, publishable key, and backend
+  API URL.
 
-Known operational controls still belong at the platform edge: request-size
-limits, rate limiting, monitoring, alerting, backups, and secret rotation.
+The API implements request-size limits and authenticated analysis/demo
+throttles. Cloudflare and Supabase provide deployment observability; alerting,
+backup drills, and periodic secret rotation remain operational responsibilities.

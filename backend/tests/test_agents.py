@@ -279,6 +279,11 @@ async def test_analysis_endpoint_persists_analysis_and_tasks(
     assert analyses_response.status_code == 200
     assert len(analyses_response.json()) == 1
 
+    second_response = await client.post(f"/api/v1/items/{item_id}/analyze")
+    assert second_response.status_code == 200
+    analyses_after_repeat = await client.get(f"/api/v1/items/{item_id}/analyses")
+    assert len(analyses_after_repeat.json()) == 2
+
     tasks_response = await client.get(f"/api/v1/projects/{project_id}/tasks")
     assert tasks_response.status_code == 200
     assert len(tasks_response.json()) == 1

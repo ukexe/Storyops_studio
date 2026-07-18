@@ -29,13 +29,13 @@ export async function updateSession(request: NextRequest) {
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/projects") ||
-    pathname.startsWith("/todos")
+    pathname.startsWith("/settings")
   const isAuthRoute = pathname === "/login" || pathname === "/register"
 
   if (!isAuthenticated && isProtectedRoute) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = "/login"
-    loginUrl.searchParams.set("next", pathname)
+    loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`)
     return NextResponse.redirect(loginUrl)
   }
 

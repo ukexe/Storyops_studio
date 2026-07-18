@@ -15,6 +15,7 @@ from app.database import get_db
 from app.models.analysis import Analysis
 from app.models.item import Item
 from app.models.project import Project
+from app.rate_limit import enforce_rate_limit
 from app.schemas.analysis import AnalysisResponse
 
 router = APIRouter(tags=["analyses"])
@@ -66,6 +67,11 @@ async def analyze_item(
     user: CurrentUser,
 ) -> AnalysisResponse:
     """Run the item-type agent and persist its analysis and generated tasks."""
+    await enforce_rate_limit(
+        f"analysis:{user['user_id']}",
+        limit=10,
+        window_seconds=60,
+    )
     item = await _get_owned_item(item_id, user["user_id"], db)
     try:
         analysis = await dispatch(item, db)

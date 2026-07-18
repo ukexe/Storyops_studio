@@ -15,3 +15,5 @@ tests
 venv
 dist
 build
+cloudflare
+node_modules

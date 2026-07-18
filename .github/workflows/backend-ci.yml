@@ -35,10 +35,17 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Scan repository history for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -68,3 +75,30 @@ jobs:
         run: python -m alembic upgrade head --sql > migration.sql
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:placeholder@localhost:5432/postgres
+
+      - name: Set up Node.js for edge API
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22.13.0"
+          cache: npm
+          cache-dependency-path: backend/cloudflare/package-lock.json
+
+      - name: Install edge API dependencies
+        run: npm ci
+        working-directory: backend/cloudflare
+
+      - name: Audit edge API dependencies
+        run: npm audit --audit-level=moderate
+        working-directory: backend/cloudflare
+
+      - name: Type-check edge API
+        run: npm run typecheck
+        working-directory: backend/cloudflare
+
+      - name: Test edge analysis rules
+        run: npm test
+        working-directory: backend/cloudflare
+
+      - name: Validate edge API bundle
+        run: npm run dry-run
+        working-directory: backend/cloudflare

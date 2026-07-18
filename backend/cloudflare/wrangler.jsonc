@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "storyops-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "migrations": [
+    {
+      "tag": "v2",
+      "deleted_classes": ["StoryOpsApi"]
+    }
+  ],
+  "vars": {
+    "SUPABASE_URL": "https://namuaqfivfwopaqkdjuw.supabase.co",
+    "CORS_ORIGINS": "https://storyops.ukexe06.workers.dev"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -6,17 +6,20 @@ This file provides guidance to agents when working with code in this repository.
 
 **StoryOps Studio** — an agentic AI creative operations platform built for the IBM AI Builders Challenge (July 2026 theme: *Reimagine Creative Industries with AI*). It turns fragmented creative production workflows (briefs, scripts, assets, edits, feedback) into a unified, insight-driven pipeline using IBM Bob, watsonx.ai, and Granite models.
 
-**Status:** StoryOps Studio v1.0.0 is published to GitHub and the Next.js
-frontend is live at `https://storyops.ukexe06.workers.dev`. Supabase Auth is
-verified. Full dashboard and agent workflows still require the production
-FastAPI deployment and initialized Supabase application tables.
+**Status:** StoryOps Studio is live end to end. The Next.js frontend runs at
+`https://storyops.ukexe06.workers.dev`, the production REST adapter runs at
+`https://storyops-api.ukexe06.workers.dev`, and the Supabase schema, Auth,
+private Storage bucket, dashboard, pipeline, analyses, and tasks are verified.
+The live adapter reports deterministic edge-agent mode until real IBM
+watsonx.ai credentials are supplied; the canonical FastAPI service contains the
+full Granite integration.
 
 ## Planned Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Next.js (React) — deployed to Cloudflare Workers with OpenNext |
-| Backend | FastAPI (Python) or Node.js — REST/GraphQL |
+| Backend | FastAPI (canonical) + Cloudflare Worker production adapter |
 | Database | PostgreSQL via Supabase or IBM Cloud Databases |
 | AI/LLM | watsonx.ai + Granite Instruct + Granite Vision models |
 | Orchestration | watsonx Orchestrate / Langflow-style multi-agent graphs |
@@ -26,7 +29,7 @@ FastAPI deployment and initialized Supabase application tables.
 
 ```
 /frontend   – Next.js app
-/backend    – FastAPI or Node.js service
+/backend    – FastAPI service and Cloudflare Worker deployment adapter
 /infra      – Deployment configs, CI/CD workflows
 /docs       – Architecture, research, Bob usage guide
 README.md

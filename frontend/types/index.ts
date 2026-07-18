@@ -84,6 +84,7 @@ export interface HealthResponse {
   status: "ok" | "error"
   database: "unknown" | "connected" | "error"
   watsonx: WatsonxStatus
+  analysis_mode?: "watsonx" | "edge-rules"
 }
 
 export interface DemoSeedResponse {

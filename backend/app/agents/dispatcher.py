@@ -1,6 +1,7 @@
 """Single routing and persistence boundary for all StoryOps agents."""
 from __future__ import annotations
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.asset_agent import AssetAgent
@@ -23,6 +24,11 @@ AGENT_MAP: dict[str, type[AgentBase]] = {
     "feedback": FeedbackAgent,
     "metric": PerformanceAgent,
 }
+MAX_TASKS_PER_ANALYSIS = 10
+MAX_TASK_TITLE_LENGTH = 500
+MAX_TASK_DESCRIPTION_LENGTH = 4000
+MAX_RECOMMENDATIONS_PER_ANALYSIS = 20
+MAX_ANALYSIS_SUMMARY_LENGTH = 10000
 
 
 async def dispatch(
@@ -42,14 +48,16 @@ async def dispatch(
     analysis = Analysis(
         item_id=item.id,
         agent_type=result.agent_type,
-        summary=result.summary,
+        summary=result.summary[:MAX_ANALYSIS_SUMMARY_LENGTH],
         recommendations=[
             {
-                "title": recommendation.title,
-                "detail": recommendation.detail,
+                "title": recommendation.title[:MAX_TASK_TITLE_LENGTH],
+                "detail": recommendation.detail[:MAX_TASK_DESCRIPTION_LENGTH],
                 "priority": recommendation.priority,
             }
-            for recommendation in result.recommendations
+            for recommendation in result.recommendations[
+                :MAX_RECOMMENDATIONS_PER_ANALYSIS
+            ]
         ],
         score_metrics=result.score_metrics,
         model_id=result.model_id,
@@ -57,16 +65,36 @@ async def dispatch(
 
     try:
         db.add(analysis)
-        for task_data in result.tasks_to_create:
+        existing_titles = set(
+            (
+                await db.scalars(
+                    select(Task.title).where(
+                        Task.linked_item_id == item.id,
+                        Task.status.in_(("todo", "in_progress")),
+                    )
+                )
+            ).all()
+        )
+        for task_data in result.tasks_to_create[:MAX_TASKS_PER_ANALYSIS]:
+            title = str(task_data["title"]).strip()[:MAX_TASK_TITLE_LENGTH]
+            if not title or title in existing_titles:
+                continue
+            description_value = task_data.get("description")
+            description = (
+                str(description_value).strip()[:MAX_TASK_DESCRIPTION_LENGTH]
+                if description_value is not None
+                else None
+            )
             db.add(
                 Task(
                     project_id=item.project_id,
                     linked_item_id=item.id,
-                    title=task_data["title"],
-                    description=task_data.get("description"),
+                    title=title,
+                    description=description,
                     priority=task_data.get("priority", "medium"),
                 )
             )
+            existing_titles.add(title)
         if commit:
             await db.commit()
         else:

@@ -21,7 +21,13 @@ from app.models.analysis import Analysis
 from app.models.item import Item
 from app.models.project import Project
 from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
-from app.storage import delete_asset_url, detect_image_content_type, upload_asset
+from app.storage import (
+    create_signed_asset_url,
+    delete_asset_url,
+    detect_image_content_type,
+    is_asset_path,
+    upload_asset,
+)
 
 router = APIRouter(tags=["items"])
 logger = logging.getLogger(__name__)
@@ -64,8 +70,20 @@ async def _get_latest_analysis(item_id: uuid.UUID, db: AsyncSession) -> Analysis
     return analysis_result.scalar_one_or_none()
 
 
-def _item_response(item: Item, latest: Analysis | None = None) -> ItemResponse:
+async def _item_response(
+    item: Item,
+    latest: Analysis | None = None,
+) -> ItemResponse:
     response = ItemResponse.model_validate(item)
+    if item.file_url and is_asset_path(item.file_url):
+        try:
+            response.file_url = await asyncio.to_thread(
+                create_signed_asset_url,
+                item.file_url,
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("Failed to sign asset URL for item %s", item.id)
+            response.file_url = None
     if latest:
         from app.schemas.analysis import AnalysisResponse
 
@@ -174,7 +192,7 @@ async def list_items(
 
     grouped: dict[str, list[ItemResponse]] = {stage: [] for stage in PIPELINE_STAGES}
     for item, latest in result.all():
-        grouped[item.stage].append(_item_response(item, latest))
+        grouped[item.stage].append(await _item_response(item, latest))
 
     return grouped
 
@@ -276,7 +294,7 @@ async def create_item(
     db.add(item)
     await db.commit()
     await db.refresh(item)
-    return _item_response(item)
+    return await _item_response(item)
 
 
 # ---------------------------------------------------------------------------
@@ -290,7 +308,7 @@ async def get_item(item_id: uuid.UUID, db: DB, user: CurrentUser) -> ItemRespons
     # Verify the caller owns the project this item belongs to
     await _get_project_for_user(item.project_id, user["user_id"], db)
 
-    return _item_response(item, await _get_latest_analysis(item.id, db))
+    return await _item_response(item, await _get_latest_analysis(item.id, db))
 
 
 # ---------------------------------------------------------------------------
@@ -312,7 +330,7 @@ async def update_item(
 
     await db.commit()
     await db.refresh(item)
-    return _item_response(item, await _get_latest_analysis(item.id, db))
+    return await _item_response(item, await _get_latest_analysis(item.id, db))
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 import uuid
 from typing import Any
 
@@ -17,6 +18,8 @@ logger = logging.getLogger(__name__)
 # JWKS cache — fetched once on first authenticated request
 # ---------------------------------------------------------------------------
 _jwks_cache: dict[str, Any] | None = None
+_jwks_cached_at = 0.0
+JWKS_CACHE_TTL_SECONDS = 600
 
 bearer_scheme = HTTPBearer(auto_error=False)
 SUPPORTED_JWT_ALGORITHMS = {"RS256", "ES256"}
@@ -24,8 +27,9 @@ SUPPORTED_JWT_ALGORITHMS = {"RS256", "ES256"}
 
 async def _get_jwks(*, force_refresh: bool = False) -> dict[str, Any]:
     """Fetch and cache the Supabase JWKS endpoint."""
-    global _jwks_cache
-    if _jwks_cache is not None and not force_refresh:
+    global _jwks_cache, _jwks_cached_at
+    cache_is_fresh = time.monotonic() - _jwks_cached_at < JWKS_CACHE_TTL_SECONDS
+    if _jwks_cache is not None and cache_is_fresh and not force_refresh:
         return _jwks_cache
 
     jwks_url = settings.SUPABASE_JWKS_URL
@@ -34,8 +38,9 @@ async def _get_jwks(*, force_refresh: bool = False) -> dict[str, Any]:
             resp = await client.get(jwks_url)
             resp.raise_for_status()
             _jwks_cache = resp.json()
-            logger.info("JWKS fetched and cached from %s", jwks_url)
-            return _jwks_cache
+        _jwks_cached_at = time.monotonic()
+        logger.info("JWKS fetched and cached from %s", jwks_url)
+        return _jwks_cache
     except Exception as exc:
         logger.warning("Failed to fetch JWKS: %s", exc)
         raise HTTPException(
@@ -119,7 +124,11 @@ async def get_current_user(
             algorithms=[algorithm],
             audience="authenticated",
             issuer=f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1",
-            options={"verify_exp": True, "verify_iss": True},
+            options={
+                "verify_exp": True,
+                "verify_iss": True,
+                "require": ["exp", "iat", "iss", "aud", "sub"],
+            },
         )
     except jwt.PyJWTError as exc:
         logger.info("Supabase token validation failed: %s", type(exc).__name__)
@@ -130,6 +139,11 @@ async def get_current_user(
         ) from exc
 
     user_id: str | None = payload.get("sub")
+    if payload.get("is_anonymous") is True:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Anonymous sessions cannot access StoryOps workspaces",
+        )
     try:
         parsed_user_id = uuid.UUID(user_id) if user_id else None
     except ValueError:

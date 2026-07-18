@@ -43,6 +43,7 @@ async def test_get_current_user_accepts_matching_es256_key(monkeypatch):
     assert decode.call_args.kwargs["algorithms"] == ["ES256"]
     assert decode.call_args.kwargs["audience"] == "authenticated"
     assert decode.call_args.kwargs["issuer"].endswith("/auth/v1")
+    assert "exp" in decode.call_args.kwargs["options"]["require"]
 
 
 @pytest.mark.asyncio
@@ -83,6 +84,37 @@ async def test_get_current_user_rejects_non_uuid_subject(monkeypatch):
         auth.jwt.PyJWK,
         "from_dict",
         lambda _key: SimpleNamespace(key="public-key"),
+    )
+
+    with pytest.raises(HTTPException) as error:
+        await auth.get_current_user(_credentials())
+
+    assert error.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_rejects_anonymous_session(monkeypatch):
+    async def fake_get_jwks(*, force_refresh: bool = False):
+        return {"keys": [{"kid": "signing-key", "alg": "RS256"}]}
+
+    monkeypatch.setattr(auth, "_get_jwks", fake_get_jwks)
+    monkeypatch.setattr(
+        auth.jwt,
+        "get_unverified_header",
+        lambda _token: {"kid": "signing-key", "alg": "RS256"},
+    )
+    monkeypatch.setattr(
+        auth.jwt.PyJWK,
+        "from_dict",
+        lambda _key: SimpleNamespace(key="public-key"),
+    )
+    monkeypatch.setattr(
+        auth.jwt,
+        "decode",
+        lambda *_args, **_kwargs: {
+            "sub": "00000000-0000-0000-0000-000000000001",
+            "is_anonymous": True,
+        },
     )
 
     with pytest.raises(HTTPException) as error:

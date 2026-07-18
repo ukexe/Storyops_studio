@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -54,6 +54,19 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         origins = [origin.strip().rstrip("/") for origin in self.CORS_ORIGINS.split(",")]
         return [origin for origin in origins if origin]
+
+    @model_validator(mode="after")
+    def validate_production_security(self):
+        if self.ENVIRONMENT != "production":
+            return self
+        for name in ("SUPABASE_URL", "SUPABASE_JWKS_URL", "WATSONX_URL"):
+            if not getattr(self, name).startswith("https://"):
+                raise ValueError(f"{name} must use HTTPS in production")
+        if any(not origin.startswith("https://") for origin in self.cors_origins):
+            raise ValueError("CORS_ORIGINS must use HTTPS in production")
+        if ":6543/" in self.DATABASE_URL:
+            raise ValueError("Production API must use the session pooler on port 5432")
+        return self
 
 
 settings = Settings()

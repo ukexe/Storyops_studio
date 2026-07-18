@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { House, ListTodo, LogOut } from "lucide-react"
+import { House, LogOut, Settings2 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -71,10 +71,10 @@ export function Header({ context, children }: HeaderProps) {
           <Button asChild variant="ghost" size="sm">
             <Link href="/dashboard">Dashboard</Link>
           </Button>
-          <Button asChild variant="ghost" size="sm" className="hidden md:flex">
-            <Link href="/todos">
-              <ListTodo />
-              Todos
+          <Button asChild variant="ghost" size="sm" className="hidden lg:flex">
+            <Link href="/settings">
+              <Settings2 />
+              Settings
             </Link>
           </Button>
           <span className="hidden max-w-48 truncate text-xs text-muted-foreground md:inline">

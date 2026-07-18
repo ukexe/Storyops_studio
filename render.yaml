@@ -2,7 +2,7 @@ services:
   - type: web
     name: storyops-backend
     runtime: docker
-    plan: free
+    plan: starter
     region: oregon
     rootDir: backend
     dockerfilePath: ./Dockerfile

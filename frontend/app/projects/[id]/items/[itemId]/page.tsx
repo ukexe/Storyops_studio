@@ -11,6 +11,7 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 import { AnalysisPanel } from "@/components/items/AnalysisPanel"
 import { Header } from "@/components/shared/Header"
@@ -104,7 +105,11 @@ export default function ItemDetailPage() {
     setAnalysisError(null)
     setIsAnalyzing(true)
     try {
-      setAnalysis(await analyzeItem(itemId))
+      const result = await analyzeItem(itemId)
+      setAnalysis(result)
+      toast.success("Analysis complete", {
+        description: `${result.recommendations.length} recommendations generated.`,
+      })
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 401) {
         router.replace(

@@ -35,7 +35,8 @@ StoryOps Studio is an agentic AI platform that turns fragmented creative product
 - Soft deletes (hard delete throughout)
 - 80%+ test coverage goal (tests focus on agent output parsing and stage-seeding only)
 - Drag-and-drop on task board (button-based status change is sufficient)
-- Settings page (watsonx status shown on dashboard; no dedicated settings page needed for demo)
+- Secret editing in the UI (the read-only Settings page reports service and
+  analysis status; deployment platforms own credentials)
 
 ---
 
@@ -53,7 +54,7 @@ StoryOps Studio is an agentic AI platform that turns fragmented creative product
 | File Storage | Supabase Storage | Asset uploads (thumbnails, script PDFs) |
 | CI/CD | GitHub Actions | Lint + type-check on push; no auto-deploy needed for hackathon |
 | Frontend Deploy | Cloudflare Workers | OpenNext + Wrangler |
-| Backend Deploy | Render free tier | Docker container; `$PORT` from env |
+| Backend Deploy | Cloudflare Worker live adapter + Render Blueprint | Edge REST contract now; Python/Granite runtime when credentials and host are available |
 
 ---
 
@@ -166,6 +167,7 @@ owner_id     uuid NOT NULL          -- from Supabase JWT sub claim; no FK needed
 name         text NOT NULL
 description  text
 repo_url     text
+demo_version varchar(50)       -- nullable; unique per owner when set
 created_at   timestamptz DEFAULT now()
 updated_at   timestamptz DEFAULT now()
 
@@ -389,7 +391,7 @@ The demo data in `backend/demo/` must be compelling:
 
 **Relevant Context:** Schema section above; `constants.py` holds `PIPELINE_STAGES`; `stage` column on `items` is a text field validated against `PIPELINE_STAGES` in the Pydantic schema
 
-**Status:** [x] complete locally; production migration requires Supabase credentials
+**Status:** [x] complete locally and applied to production through revision `b91f4d8a2c10`
 
 ---
 
@@ -489,14 +491,14 @@ The demo data in `backend/demo/` must be compelling:
 - [x] Write `docs/architecture.md` with system, schema, agent, deployment, security, and IBM Bob details
 - [x] Write `docs/demo-walkthrough.md` with acceptance checks
 - [x] Add validated frontend and backend GitHub Actions workflows
-- [ ] Verify full demo flow against deployed Cloudflare + Render instances
+- [x] Verify full demo flow against deployed Cloudflare frontend and REST adapter
 - [x] Prepare the local `v1.0.0` release commit and annotated tag
 - [x] Push the release tag to GitHub
 - [ ] Publish the GitHub Release and add the demo video URL
 
 **Relevant Context:** `docs/research.md` → IBM Bob Usage Strategy, Demo Script, Judging Strategy, README Structure; IBM Bob evidence is a judging criterion per `AGENTS.md`
 
-**Status:** release candidate complete locally; external deployment and public release gates remain
+**Status:** production flow verified; public release publication and real IBM credentials remain external gates
 
 ---
 
@@ -532,7 +534,11 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 2. **Analysis is synchronous** — `POST /items/{id}/analyze` blocks until Granite responds (3–8s). Frontend shows a spinner; no polling or job IDs.
 3. **`analyses.recommendations` must be a JSON array** — always `[{title, detail, priority}]`. The frontend renders from this structure; plain text will break the UI.
 4. **Granite model IDs must be fully qualified** — e.g., `ibm/granite-3-8b-instruct`. Never use short aliases.
-5. **Use the Supabase session pooler on port 5432** — Render is a persistent backend and needs prepared-statement-compatible sessions.
+5. **Use the Supabase session pooler on port 5432** — the canonical FastAPI
+   deployment uses the least-privilege `storyops_app` runtime role; the live
+   edge adapter uses Supabase REST instead of a database password.
 6. **IBM Bob usage must be visibly evidenced** — reference Bob's role in planning, scaffolding, and docs in `docs/architecture.md` and README. This is a judging criterion.
-7. **Demo seed is authenticated and runs real Granite calls** — ensure `WATSONX_*` vars are set before a judge selects Seed demo. The endpoint is idempotent per user.
+7. **Demo seed is authenticated and idempotent** — the live adapter records
+   explicit edge-rules IDs. Deploy the canonical FastAPI service with valid
+   `WATSONX_*` values to demonstrate real Granite inference.
 8. **Asset Agent requires image bytes, not a URL** — `AssetAgent` fetches the image from Supabase Storage and `watsonx_client.analyze_image()` base64-encodes it before calling the Granite Vision API.

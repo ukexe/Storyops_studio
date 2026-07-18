@@ -1,6 +1,7 @@
 """Granite Vision-powered creative asset analysis."""
 from __future__ import annotations
 
+import asyncio
 from typing import Any, cast
 
 import httpx
@@ -13,7 +14,7 @@ from app.agents.base_agent import (
     parse_json_response,
 )
 from app.models.item import Item
-from app.storage import is_public_asset_url
+from app.storage import download_asset, is_asset_path, is_public_asset_url
 
 ASSET_MODEL_ID = "ibm/granite-vision-3-2-2b"
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
@@ -105,7 +106,14 @@ or "fail". severity must be "low", "medium", or "high".
 
 
 async def _fetch_image_bytes(url: str) -> bytes:
-    """Fetch a bounded public image from Supabase Storage."""
+    """Fetch a bounded image from trusted Supabase Storage."""
+    if is_asset_path(url):
+        image_bytes = await asyncio.to_thread(download_asset, url)
+        if not image_bytes:
+            raise ValueError("Downloaded asset image is empty")
+        if len(image_bytes) > MAX_IMAGE_BYTES:
+            raise ValueError("Asset image exceeds the 10 MB analysis limit")
+        return image_bytes
     if not is_public_asset_url(url):
         raise ValueError("Asset URL is outside the configured Supabase Storage bucket")
     try:

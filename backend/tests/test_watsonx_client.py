@@ -12,10 +12,12 @@ from app.agents.watsonx_client import WatsonxClient
 class _FakeFoundationModels:
     def __init__(self) -> None:
         self.requested_limit: int | None = None
+        self.requested_models: list[str] = []
 
-    def get_model_specs(self, *, limit: int) -> dict:
+    def get_model_specs(self, *, model_id: str, limit: int) -> dict:
         self.requested_limit = limit
-        return {"resources": [{"model_id": "ibm/granite-3-8b-instruct"}]}
+        self.requested_models.append(model_id)
+        return {"resources": [{"model_id": model_id}]}
 
 
 class _FakeAPIClient:
@@ -86,7 +88,13 @@ async def test_analyze_image_sends_base64_data_url(fake_sdk):
 
 
 @pytest.mark.asyncio
-async def test_connection_check_updates_health_status(fake_sdk, client):
+async def test_connection_check_updates_health_status(fake_sdk, client, monkeypatch):
+    from app import main as main_module
+
+    async def connected_database():
+        return "connected"
+
+    monkeypatch.setattr(main_module, "_check_database", connected_database)
     watsonx_client = WatsonxClient(
         "api-key",
         "project-id",
@@ -100,6 +108,6 @@ async def test_connection_check_updates_health_status(fake_sdk, client):
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
-        "database": "unknown",
+        "database": "connected",
         "watsonx": "connected",
     }

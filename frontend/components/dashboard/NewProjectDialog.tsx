@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { AlertCircle, Plus } from "lucide-react"
+import { toast } from "sonner"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -49,6 +50,9 @@ export function NewProjectDialog({ onCreated }: NewProjectDialogProps) {
         description: description.trim() || null,
       })
       onCreated(project)
+      toast.success("Project created", {
+        description: `${project.name} is ready for creative work.`,
+      })
       setOpen(false)
       reset()
     } catch (caught) {

@@ -12,17 +12,18 @@ Confirm the deployed environment:
    - HTTP `200`
    - `status` is `ok`
    - `database` is `connected`
-   - `watsonx` is `connected`
+   - `analysis_mode` is `edge-rules` on the live adapter, or `watsonx` is
+     `connected` on a credentialed FastAPI deployment
 3. Open the frontend landing page.
 4. Confirm the frontend deployment URL and `/auth/confirm` are allowed Supabase
    Auth redirect URLs.
-5. Confirm the Supabase `assets` bucket exists and is publicly readable.
-6. Confirm Alembic reports revision `a4b7c2d9e001`.
+5. Confirm the Supabase `assets` bucket exists and is private.
+6. Confirm Alembic reports revision `b91f4d8a2c10`.
 
 For local testing, use `http://localhost:3000` and
 `http://localhost:8000`. The deployed frontend is
-`https://storyops.ukexe06.workers.dev`; full dashboard workflows also require
-the production FastAPI URL.
+`https://storyops.ukexe06.workers.dev`; the live API is
+`https://storyops-api.ukexe06.workers.dev`.
 
 ## Demo story
 
@@ -40,7 +41,8 @@ Expected:
 
 - The dashboard loads without a redirect loop.
 - The user email appears in the header.
-- The watsonx badge reports a connected state.
+- The status badge reports **Edge agents active** on the current production
+  adapter, or **watsonx connected** on the credentialed FastAPI runtime.
 
 ### 2. Seed the judging project
 
@@ -80,7 +82,8 @@ Show:
 - Brief Agent summary
 - Clarity score
 - Missing-information recommendations
-- Fully qualified Granite model ID
+- Explicit `storyops/edge-*` ruleset ID in the live fallback, or fully qualified
+  Granite model ID on FastAPI
 
 Explain that the agent converts ambiguity into structured production work
 instead of generating the creative concept.
@@ -97,8 +100,9 @@ Show:
 - Retention risk
 - Pacing and improvement recommendations
 
-Model output is nondeterministic. Demonstrate the presence and structure of
-useful recommendations rather than promising an exact score or task count.
+Granite model output is nondeterministic. Edge fallback output is deterministic;
+in either mode, demonstrate the recommendation structure rather than promising
+an exact task count.
 
 ### 6. Open the asset analysis
 
@@ -106,13 +110,14 @@ Open **Thumbnail v1**.
 
 Show:
 
-- Image preview from Supabase Storage
-- Granite Vision brand consistency score
+- Image preview
+- Brand consistency score
 - Logo integrity result
 - Visual issue recommendations
 
-Explain that image bytes are fetched only from the configured StoryOps Storage
-bucket and sent to watsonx.ai through the centralized client.
+Explain that user uploads are private Supabase objects served with signed URLs.
+The canonical FastAPI Asset Agent downloads private bytes and sends them through
+the centralized watsonx client when IBM credentials are available.
 
 ### 7. Show generated tasks
 
@@ -161,15 +166,15 @@ To demonstrate authoring rather than seeding:
 ## Acceptance checklist
 
 - [ ] Registration and email confirmation work.
-- [ ] Protected deep links return to their original destination after login.
-- [ ] Dashboard project counts are correct.
-- [ ] Backend health reports database and watsonx connectivity.
-- [ ] Demo seed is authenticated and idempotent.
-- [ ] Four demo items render in the expected stages.
-- [ ] Brief, Script, and Asset analyses render without polling.
-- [ ] Asset preview loads from the `assets` bucket.
-- [ ] Generated tasks include linked item titles.
-- [ ] Task status changes persist after reload.
+- [x] Protected deep links return to their original destination after login.
+- [x] Dashboard project counts are correct.
+- [x] Backend health reports connected production data and active analysis mode.
+- [x] Demo seed is authenticated and idempotent.
+- [x] Four demo items render in the expected stages.
+- [x] Brief, Script, and Asset analyses render without polling.
+- [x] Private asset uploads return working signed previews.
+- [x] Generated tasks include linked item titles.
+- [x] Task status changes persist after reload.
 - [ ] Mobile layouts do not overflow.
 - [ ] Keyboard navigation reaches all demo controls.
 - [ ] No browser console errors occur.
@@ -197,7 +202,7 @@ To demonstrate authoring rather than seeding:
 
 ### Asset upload or preview fails
 
-- Confirm the public `assets` bucket exists.
+- Confirm the private `assets` bucket exists.
 - Confirm the file is a valid JPEG, PNG, GIF, or WebP image under 10 MB.
 - Confirm `NEXT_PUBLIC_SUPABASE_URL` was present during the frontend build.
 

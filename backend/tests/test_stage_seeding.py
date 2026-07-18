@@ -60,7 +60,12 @@ async def test_list_items_grouped_by_stage(client):
     ]:
         await client.post(
             f"/api/v1/projects/{project_id}/items",
-            data={"stage": stage, "type": item_type, "title": title},
+            data={
+                "stage": stage,
+                "type": item_type,
+                "title": title,
+                "content": f"Content for {title}",
+            },
         )
 
     resp = await client.get(f"/api/v1/projects/{project_id}/items")

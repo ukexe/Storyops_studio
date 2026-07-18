@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { AlertCircle, Upload } from "lucide-react"
+import { toast } from "sonner"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -89,17 +90,42 @@ export function AddItemSheet({
       return
     }
 
+    let metadata: Record<string, unknown> =
+      type === "script" ? { content_type: "youtube" } : {}
+    if (type === "edit" || type === "metric") {
+      try {
+        const parsed = JSON.parse(content)
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("Metadata must be a JSON object.")
+        }
+        metadata = parsed as Record<string, unknown>
+      } catch (caught) {
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Metadata must be valid JSON.",
+        )
+        return
+      }
+    }
+
     setIsSubmitting(true)
     try {
       const item = await createItem(projectId, {
         stage,
         type,
         title: title.trim(),
-        content: type === "asset" ? null : content.trim(),
-        metadata: type === "script" ? { content_type: "youtube" } : {},
+        content:
+          type === "asset" || type === "edit" || type === "metric"
+            ? null
+            : content.trim(),
+        metadata,
         file,
       })
       onCreated(item)
+      toast.success("Item added", {
+        description: `${item.title} is now in ${item.stage}.`,
+      })
       onClose()
     } catch (caught) {
       setError(
@@ -207,12 +233,22 @@ export function AddItemSheet({
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="item-content">Content</Label>
+                <Label htmlFor="item-content">
+                  {type === "edit" || type === "metric"
+                    ? "Metadata JSON"
+                    : "Content"}
+                </Label>
                 <Textarea
                   id="item-content"
                   value={content}
                   onChange={(event) => setContent(event.target.value)}
-                  placeholder="Paste the brief, script, notes, or metadata here"
+                  placeholder={
+                    type === "edit"
+                      ? '{"scenes":[{"start_ms":0,"end_ms":4500,"type":"talking_head"}]}'
+                      : type === "metric"
+                        ? '{"views":1000,"avg_retention_pct":52,"ctr_pct":5.4}'
+                        : "Paste the brief, script, or notes here"
+                  }
                   rows={12}
                   required
                   disabled={isSubmitting}

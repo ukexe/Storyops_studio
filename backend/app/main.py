@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Literal
@@ -27,18 +28,23 @@ DatabaseStatus = Literal["unknown", "connected", "error"]
 _database_status: DatabaseStatus = "unknown"
 
 
+async def _check_database() -> DatabaseStatus:
+    try:
+        async with engine.connect() as conn:
+            await asyncio.wait_for(conn.execute(text("SELECT 1")), timeout=5)
+        return "connected"
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Database readiness check failed: %s", exc)
+        return "error"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _database_status
     # Startup: verify database connectivity
-    try:
-        async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-        _database_status = "connected"
+    _database_status = await _check_database()
+    if _database_status == "connected":
         logger.info("Database connection OK")
-    except Exception as exc:  # noqa: BLE001
-        _database_status = "error"
-        logger.warning("Database connection failed on startup: %s", exc)
 
     try:
         watsonx_client = get_client()
@@ -57,8 +63,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StoryOps Studio API",
     description="Agentic AI creative operations platform — IBM AI Builders Challenge 2026",
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan,
+    docs_url=None if settings.ENVIRONMENT == "production" else "/docs",
+    redoc_url=None if settings.ENVIRONMENT == "production" else "/redoc",
+    openapi_url=None if settings.ENVIRONMENT == "production" else "/openapi.json",
 )
 
 app.add_middleware(
@@ -89,6 +98,8 @@ async def root():
 @app.get("/health", tags=["system"])
 async def health() -> JSONResponse:
     """Report readiness of required API dependencies."""
+    global _database_status
+    _database_status = await _check_database()
     payload = {
         "status": "ok" if _database_status != "error" else "error",
         "database": _database_status,

@@ -12,6 +12,10 @@ from app.config import settings
 
 WatsonxStatus = Literal["unknown", "connected", "error"]
 INFERENCE_TIMEOUT_SECONDS = 90
+REQUIRED_MODEL_IDS = (
+    "ibm/granite-3-8b-instruct",
+    "ibm/granite-vision-3-2-2b",
+)
 
 
 class WatsonxError(RuntimeError):
@@ -55,12 +59,19 @@ class WatsonxClient:
         return model
 
     async def check_connection(self) -> None:
-        """Verify credentials and model-catalog connectivity."""
+        """Verify credentials and availability of every configured model."""
         try:
-            await asyncio.to_thread(
-                self._api_client.foundation_models.get_model_specs,
-                limit=1,
-            )
+            for model_id in REQUIRED_MODEL_IDS:
+                result = await asyncio.to_thread(
+                    self._api_client.foundation_models.get_model_specs,
+                    model_id=model_id,
+                    limit=1,
+                )
+                resources = result.get("resources", []) if isinstance(result, dict) else []
+                if not resources:
+                    raise WatsonxError(
+                        f"Required watsonx.ai model is unavailable: {model_id}"
+                    )
         except Exception as exc:
             _set_connection_status("error")
             raise WatsonxError("watsonx.ai connectivity check failed") from exc

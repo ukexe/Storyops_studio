@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 import { NewProjectDialog } from "@/components/dashboard/NewProjectDialog"
 import { Header } from "@/components/shared/Header"
@@ -98,6 +99,9 @@ export default function DashboardPage() {
     setIsSeeding(true)
     try {
       const { project_id } = await seedDemo()
+      toast.success("Demo workspace ready", {
+        description: "Four items, three analyses, and linked tasks were created.",
+      })
       router.push(`/projects/${project_id}`)
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 401) {
@@ -227,7 +231,10 @@ export default function DashboardPage() {
                 </CardContent>
                 <CardFooter>
                   <Button asChild variant="outline" className="w-full">
-                    <Link href={`/projects/${project.id}`}>
+                    <Link
+                      href={`/projects/${project.id}`}
+                      aria-label={`Open ${project.name} pipeline`}
+                    >
                       Open pipeline
                       <ArrowRight />
                     </Link>

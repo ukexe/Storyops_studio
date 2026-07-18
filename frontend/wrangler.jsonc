@@ -10,7 +10,8 @@
   },
   "vars": {
     "NEXT_PUBLIC_SUPABASE_URL": "https://namuaqfivfwopaqkdjuw.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_zUaqOVF8ln8dwIHcZ3tIkA_p91WwXZX"
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_zUaqOVF8ln8dwIHcZ3tIkA_p91WwXZX",
+    "NEXT_PUBLIC_API_URL": "https://storyops-api.ukexe06.workers.dev/api/v1"
   },
   "observability": {
     "enabled": true

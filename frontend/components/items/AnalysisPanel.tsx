@@ -89,7 +89,7 @@ export function AnalysisPanel({
           >
             <Spinner className="size-6" />
             <p className="mt-4 text-sm font-medium">
-              Analyzing with IBM Granite…
+              Running the assigned StoryOps agent…
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               This usually takes a few seconds.

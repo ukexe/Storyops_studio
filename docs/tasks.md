@@ -81,7 +81,8 @@
 - [x] Edit `alembic.ini`: set `sqlalchemy.url` to a placeholder (actual URL read from env in `env.py`)
 - [x] Run `alembic revision --autogenerate -m "initial schema"` and inspect the generated file
 - [x] Manually add the three indexes to the migration: `ix_items_project_id`, `ix_items_stage`, `ix_analyses_item_id`, `ix_tasks_project_status` (compound)
-- [ ] Run `alembic upgrade head` against Supabase and verify tables in Supabase dashboard ⚠️ *Requires real Supabase credentials in `backend/.env` — run manually once credentials are set*
+- [x] Run `alembic upgrade head` against Supabase and verify tables, indexes,
+  constraints, RLS, UUID defaults, triggers, revision state, and private Storage
 
 **Constraints:** Alembic async migration requires `run_migrations_online` to use `AsyncEngine.begin()`. Follow the async pattern from Alembic docs — the default sync template will fail with asyncpg.
 
@@ -371,7 +372,9 @@
 ### T2.9 — Demo seed endpoint
 **What:** Implement `POST /demo/seed` — the single endpoint that creates a full pre-analyzed project in one call. This is the judging demo entry point.
 
-**Deliverable:** `POST /demo/seed` (no auth required) returns `{"project_id": "<uuid>"}`. Navigating to that project in the UI shows a fully populated pipeline with analyses and tasks on three items.
+**Deliverable:** Authenticated `POST /demo/seed` returns
+`{"project_id": "<uuid>"}`. Navigating to that project in the UI shows a fully
+populated pipeline with analyses and tasks on three items.
 
 **Steps:**
 - [x] Create `backend/app/routers/demo.py`:
@@ -432,7 +435,8 @@
 - [x] Install `@supabase/ssr` and `@supabase/supabase-js`
 - [x] Create `frontend/app/(auth)/login/page.tsx` — email + password form using `signInWithPassword()` and dashboard redirect
 - [x] Create `frontend/app/(auth)/register/page.tsx` — account creation with immediate-session and email-confirmation states
-- [x] Add Next.js 16 Proxy (`frontend/proxy.ts`) using `@supabase/ssr` to refresh cookies and protect `/dashboard` and `/projects`
+- [x] Add Cloudflare-compatible Next.js middleware using `@supabase/ssr` to
+  refresh cookies and protect `/dashboard` and `/projects`
 - [x] Create Supabase confirmation/error routes and update the root layout metadata and application shell
 
 ---
@@ -619,32 +623,38 @@
 
 ---
 
-### T5.2 — Deployment: backend on Render
-**What:** Deploy the FastAPI backend as a Docker container on Render free tier.
+### T5.2 — Deployment: production backend
+**What:** Deploy the REST contract on Cloudflare and retain the Dockerized
+FastAPI/Render path for IBM Granite credentials.
 
-**Deliverable:** `GET https://<render-url>/health` returns `{"status": "ok", "watsonx": "connected"}`. The URL is ready to be used as `NEXT_PUBLIC_API_URL`.
+**Deliverable:** The live API health endpoint reports connected production data
+and exposes every authenticated StoryOps route.
 
 **Steps:**
 - [x] Create a non-root `backend/Dockerfile` and secret-safe `.dockerignore`
 - [x] Use Render's `$PORT` in the container command and add liveness/readiness probes
 - [x] Create and validate `render.yaml` with Docker, pre-deploy migration, health check, and secret declarations
 - [x] Build and smoke-test the release image locally, including non-root execution and secret exclusion
-- [ ] Provision the Render service, enter production secrets, and verify its public `/health`
+- [x] Deploy and verify `https://storyops-api.ukexe06.workers.dev`
+- [x] Add the Cloudflare Worker adapter to backend CI
+- [ ] Deploy the optional FastAPI/Render runtime after valid IBM credentials and
+  an authorized Python container host are available
 
 ---
 
 ### T5.3 — Deployment: frontend on Cloudflare
 **What:** Deploy the Next.js frontend to Cloudflare Workers through OpenNext and Wrangler.
 
-**Deliverable:** `https://<vercel-url>/dashboard` loads the live app. "Seed Demo" button works end-to-end.
+**Deliverable:** `https://storyops.ukexe06.workers.dev/dashboard` loads the live
+app and **Seed demo** works end to end.
 
 **Steps:**
 - [x] Add OpenNext and Wrangler configuration for the `storyops` Worker
 - [x] Validate the Worker bundle and Wrangler dry run
 - [x] Deploy and smoke-test `https://storyops.ukexe06.workers.dev`
 - [x] Configure the Supabase URL and publishable key in the Worker
-- [ ] Add the deployed Cloudflare URL to Supabase Auth allowed redirect URLs
-- [ ] Configure the production FastAPI URL and verify the full dashboard pipeline
+- [x] Add the deployed Cloudflare URL to Supabase Auth Site URL and redirect list
+- [x] Configure the production REST URL and verify the full dashboard pipeline
 
 ---
 
@@ -710,11 +720,17 @@
   8. Navigate to Tasks board; show all auto-generated tasks across Todo column
   9. Mark one task "In Progress"; verify it moves column
 - [x] Run local CI-equivalent, migration, dependency, frontend build, and Docker smoke checks
-- [ ] Run the full authenticated walkthrough against deployed Cloudflare and Render services
+- [x] Run the full authenticated walkthrough against the deployed Cloudflare
+  frontend, API, Supabase Auth, Postgres, and private Storage
 - [x] Prepare the local `v1.0.0` release commit and annotated tag
 - [x] Push the `v1.0.0` tag
 - [ ] Publish a GitHub Release after GitHub CLI/API authentication is available
 - [ ] Add the public demo video URL to README and release notes
+
+**Production status:** Cloudflare frontend/API, Supabase schema/Auth/private
+Storage, and the complete persisted browser journey are verified. Real Granite
+inference remains gated only by valid IBM credentials; production explicitly
+uses and labels deterministic edge-agent mode.
 
 ---
 

@@ -9,7 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.dispatcher import dispatch
@@ -19,6 +19,7 @@ from app.config import settings
 from app.database import get_db
 from app.models.item import Item
 from app.models.project import Project
+from app.rate_limit import enforce_rate_limit
 from app.storage import delete_asset, upload_asset
 
 router = APIRouter(prefix="/demo", tags=["demo"])
@@ -30,6 +31,7 @@ DEMO_OWNER_ID = uuid.UUID("00000000-0000-0000-0000-000000000042")
 DEMO_DIR = Path(__file__).resolve().parents[2] / "demo"
 DEMO_PROJECT_NAME = "YouTube Series — AI Explained"
 DEMO_THUMBNAIL_NAME = "sample-thumbnail.jpg"
+DEMO_VERSION = "2026-v1"
 
 
 class DemoSeedResponse(BaseModel):
@@ -48,16 +50,26 @@ async def seed_demo(db: DB, user: OptionalCurrentUser) -> DemoSeedResponse:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication is required to seed the demo",
         )
+    await enforce_rate_limit(
+        f"demo:{user['user_id'] if user else DEMO_OWNER_ID}",
+        limit=5,
+        window_seconds=3600,
+    )
 
     brief_path = DEMO_DIR / "sample-brief.txt"
     script_path = DEMO_DIR / "sample-script.txt"
     thumbnail_path = DEMO_DIR / DEMO_THUMBNAIL_NAME
     owner_id = uuid.UUID(user["user_id"]) if user else DEMO_OWNER_ID
+    if db.bind and db.bind.dialect.name == "postgresql":
+        await db.execute(
+            text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+            {"key": f"storyops-demo:{owner_id}:{DEMO_VERSION}"},
+        )
     existing_project_id = await db.scalar(
         select(Project.id)
         .where(
             Project.owner_id == owner_id,
-            Project.name == DEMO_PROJECT_NAME,
+            Project.demo_version == DEMO_VERSION,
         )
         .order_by(Project.created_at.desc())
         .limit(1)
@@ -79,6 +91,7 @@ async def seed_demo(db: DB, user: OptionalCurrentUser) -> DemoSeedResponse:
             description=(
                 "Demo project for StoryOps Studio — IBM AI Builders Challenge 2026"
             ),
+            demo_version=DEMO_VERSION,
         )
         db.add(project)
         await db.flush()

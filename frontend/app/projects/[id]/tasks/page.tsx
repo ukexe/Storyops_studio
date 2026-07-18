@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 import { Header } from "@/components/shared/Header"
 import { TaskCard } from "@/components/tasks/TaskCard"
@@ -141,6 +142,9 @@ export default function ProjectTasksPage() {
         ),
       )
       setAnnouncement(`${task.title} moved to ${nextStatus.replace("_", " ")}.`)
+      toast.success("Task updated", {
+        description: `${task.title} moved to ${nextStatus.replace("_", " ")}.`,
+      })
     } catch (caught) {
       setTasks((current) =>
         current.map((candidate) =>

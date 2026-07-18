@@ -87,12 +87,6 @@ export default function Home() {
             >
               Stories
             </a>
-            <Link
-              href="/todos"
-              className="hidden rounded-lg px-3 py-2 font-medium hover:bg-muted sm:block"
-            >
-              Todos
-            </Link>
             <ThemeToggle />
             <Link
               href="/login"
@@ -293,9 +287,6 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p>StoryOps Studio · Creative operations with IBM Granite</p>
           <div className="flex gap-4">
-            <Link href="/todos" className="hover:text-foreground">
-              Todos
-            </Link>
             <Link href="/login" className="hover:text-foreground">
               Dashboard
             </Link>

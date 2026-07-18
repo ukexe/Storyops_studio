@@ -1,6 +1,7 @@
 """Supabase Storage helper — wraps the supabase-py secret-key client."""
 from __future__ import annotations
 
+import uuid
 from urllib.parse import urlparse
 
 from supabase import Client, create_client
@@ -38,7 +39,7 @@ def storage_object_path(project_id: str, filename: str) -> str:
 
 
 def upload_asset(project_id: str, filename: str, data: bytes) -> str:
-    """Upload a file to Supabase Storage and return its public URL.
+    """Upload a file to Supabase Storage and return its object path.
 
     Path: assets/{project_id}/{filename}
     """
@@ -53,9 +54,7 @@ def upload_asset(project_id: str, filename: str, data: bytes) -> str:
         file_options={"content-type": content_type, "upsert": "true"},
     )
 
-    # Return the public URL
-    url_response = client.storage.from_(BUCKET_NAME).get_public_url(path)
-    return url_response
+    return path
 
 
 def delete_asset(project_id: str, filename: str) -> None:
@@ -83,7 +82,48 @@ def is_public_asset_url(url: str) -> bool:
     )
 
 
+def is_asset_path(value: str) -> bool:
+    project_id, separator, filename = value.partition("/")
+    if (
+        not separator
+        or not project_id
+        or not filename
+        or "/" in filename
+        or ".." in value
+    ):
+        return False
+    try:
+        uuid.UUID(project_id)
+    except ValueError:
+        return False
+    return True
+
+
+def create_signed_asset_url(path: str, expires_in: int = 3600) -> str:
+    if not is_asset_path(path):
+        raise ValueError("Invalid asset object path")
+    response = get_supabase().storage.from_(BUCKET_NAME).create_signed_url(
+        path,
+        expires_in,
+    )
+    signed_url = response.get("signedURL") or response.get("signedUrl")
+    if not signed_url:
+        raise ValueError("Supabase did not return a signed asset URL")
+    if signed_url.startswith("/"):
+        return f"{settings.SUPABASE_URL.rstrip('/')}{signed_url}"
+    return signed_url
+
+
+def download_asset(path: str) -> bytes:
+    if not is_asset_path(path):
+        raise ValueError("Invalid asset object path")
+    return get_supabase().storage.from_(BUCKET_NAME).download(path)
+
+
 def asset_location_from_url(url: str) -> tuple[str, str] | None:
+    if is_asset_path(url):
+        project_id, filename = url.split("/", 1)
+        return project_id, filename
     if not is_public_asset_url(url):
         return None
     path = urlparse(url).path

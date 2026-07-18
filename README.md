@@ -1,6 +1,6 @@
 # StoryOps Studio
 
-[![Release](https://img.shields.io/badge/release-v1.0.0-111827)](#release-status)
+[![Release](https://img.shields.io/badge/release-v1.1.0-111827)](#release-status)
 [![Backend CI](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml)
 [![Live on Cloudflare](https://img.shields.io/badge/live-Cloudflare%20Workers-f97316)](https://storyops.ukexe06.workers.dev)
@@ -21,6 +21,7 @@ StoryOps Studio was designed for the IBM AI Builders Challenge 2026 theme
 **Reimagine Creative Industries with AI**.
 
 - Live frontend: [storyops.ukexe06.workers.dev](https://storyops.ukexe06.workers.dev)
+- Live API: [storyops-api.ukexe06.workers.dev](https://storyops-api.ukexe06.workers.dev/health)
 - GitHub: [ukexe/Storyops_studio](https://github.com/ukexe/Storyops_studio)
 
 ## Product capabilities
@@ -29,27 +30,30 @@ StoryOps Studio was designed for the IBM AI Builders Challenge 2026 theme
 - Seven-stage creative pipeline:
   `Idea → Script → Assets → Edit → Feedback → Publish → Analyze`
 - Text and image item ingestion
-- IBM Granite brief and script analysis
-- IBM Granite Vision asset analysis
-- Deterministic edit, performance, and feedback analysis
+- IBM Granite brief, script, and vision agents in the canonical FastAPI service
+- Deterministic production fallback agents for every item type when IBM
+  credentials are unavailable
 - Structured scores and priority-labelled recommendations
 - AI-generated task board with optimistic status updates
 - One-click, idempotent judging demo seed
+- Read-only production service and security settings
 - Responsive and keyboard-accessible Next.js interface
 
 ## Architecture
 
 ```text
-Browser → Cloudflare Workers / Next.js → Render / FastAPI
-                              ├─ Supabase Postgres
-                              ├─ Supabase Storage
-                              └─ watsonx.ai / Granite
+Browser → Cloudflare Workers / Next.js → Cloudflare Worker REST adapter
+                                             ├─ Supabase Postgres
+                                             └─ Supabase private Storage
+
+Canonical FastAPI service → Supabase + IBM watsonx.ai / Granite
 ```
 
-The browser authenticates through Supabase Auth and forwards a JWT to FastAPI.
-FastAPI verifies the token against Supabase JWKS, applies project ownership
-checks, persists data through async SQLAlchemy, and dispatches the correct
-analysis agent.
+The browser authenticates through Supabase Auth and forwards a JWT to the live
+REST adapter. The adapter validates the session with Supabase Auth, applies
+project ownership checks, and accesses Postgres and private Storage with a
+backend-only secret. The canonical FastAPI implementation provides the same
+contract using JWT/JWKS validation and async SQLAlchemy.
 
 Application tables are protected from direct browser Data API access. The
 hardening migration enables RLS, revokes browser-role privileges, and adds
@@ -61,16 +65,18 @@ data flow, security controls, agent dispatch, deployment, and failure behavior.
 ## Technology
 
 - Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui
-- Backend: FastAPI, Python 3.11, SQLAlchemy 2 async, Alembic
+- Backend: FastAPI/Python canonical service plus a TypeScript Cloudflare Worker
+  production adapter
 - Identity and storage: Supabase Auth and Storage
 - Database: Supabase PostgreSQL
 - AI: IBM watsonx.ai, Granite Instruct, Granite Vision
-- Deployment: Cloudflare Workers (OpenNext) and Render
+- Deployment: Cloudflare Workers for the frontend and live API; Render Blueprint
+  retained for the full Python/watsonx runtime
 - CI: GitHub Actions
 
 ## IBM Granite and watsonx.ai
 
-The production AI agents call IBM watsonx.ai through one SDK wrapper:
+The canonical FastAPI AI agents call IBM watsonx.ai through one SDK wrapper:
 
 - Brief Agent — objectives, constraints, missing information, clarity score
 - Script Agent — hook strength, pacing, CTA, retention risk
@@ -80,8 +86,10 @@ The wrapper caches model interfaces, limits concurrent inference, applies
 request deadlines, and sanitizes SDK failures.
 
 Rules-based agents cover edit timing, performance metrics, and reviewer
-feedback without pretending to call a model. Every analysis records the model
-or ruleset ID used.
+feedback without pretending to call a model. The live edge adapter activates
+deterministic agents for all item types while IBM credentials remain
+placeholders. Every response records either its Granite model ID or explicit
+`storyops/edge-*` ruleset ID, and `/health` reports the active analysis mode.
 
 Required IBM configuration:
 
@@ -123,7 +131,7 @@ validation.
 1. Create a Supabase project.
 2. Copy the project URL, publishable key, secret key, and session-pooler
    connection string.
-3. Create a public Storage bucket named `assets`.
+3. Run Alembic; migrations create the private `assets` Storage bucket.
 4. Add local and deployed `/auth/confirm` URLs to Auth redirect URLs.
 5. Do not grant browser roles access to the four application tables; Alembic
    applies the restrictive table policy.
@@ -195,8 +203,8 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ```
 
-`NEXT_PUBLIC_API_URL` is optional for the public homepage, Supabase Auth, and
-Todos page. It is required for the full StoryOps dashboard and agent workflow.
+`NEXT_PUBLIC_API_URL` is optional for the public homepage and Supabase Auth. It
+is required for the full StoryOps dashboard and agent workflow.
 
 Open `http://localhost:3000`.
 
@@ -275,25 +283,27 @@ GitHub Actions run the same checks on pushes and pull requests to `main`.
 
 ## Deployment
 
-- Backend: import [render.yaml](render.yaml) as a Render Blueprint and supply
-  all secret values.
-- Frontend: `frontend/wrangler.jsonc` and OpenNext deploy the application to
-  Cloudflare Workers. The production homepage is
+- Live API: `backend/cloudflare/wrangler.jsonc` deploys the authenticated REST
+  adapter to
+  [storyops-api.ukexe06.workers.dev](https://storyops-api.ukexe06.workers.dev).
+- Full Python API: import [render.yaml](render.yaml) to deploy FastAPI with real
+  watsonx credentials when a Python container host is available.
+- Frontend: `frontend/wrangler.jsonc` and OpenNext deploy
   [storyops.ukexe06.workers.dev](https://storyops.ukexe06.workers.dev).
-- Supabase: apply Alembic migrations, create the `assets` bucket, and configure
-  production Auth redirects.
-
-Deployment configuration is source-controlled, but account provisioning and
-secret entry must be performed by an authorized project owner.
+- Supabase: Alembic revision `b91f4d8a2c10` is applied; Auth production URLs,
+  restrictive table grants, RLS, constraints, and the private `assets` bucket
+  are verified.
 
 ## Release status
 
-Release candidate: **v1.0.0**
+Production release: **v1.1.0**
 
-Local CI-equivalent checks, dependency audits, migration compilation, OpenNext
-build, Cloudflare deployment, Supabase Auth, and Docker image validation pass.
-The supplied Supabase project does not currently contain the StoryOps or
-`todos` tables, and the FastAPI production URL is not configured.
+The Cloudflare frontend and API, Supabase Auth/database/private Storage, full
+authenticated browser journey, dependency audits, migrations, tests, and
+Linux OpenNext build are verified. Real Granite inference is the only external
+release dependency still unavailable: the supplied IBM API key and project ID
+are placeholders, so production transparently reports and uses deterministic
+edge agents.
 
 ## Documentation
 
@@ -301,6 +311,7 @@ The supplied Supabase project does not currently contain the StoryOps or
 - [Implementation plan](docs/implementation-plan.md)
 - [Task status](docs/tasks.md)
 - [Demo walkthrough](docs/demo-walkthrough.md)
+- [v1.1 engineering report](docs/release-report.md)
 - [Product and competition research](docs/research.md)
 
 ## License
