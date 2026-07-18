@@ -9,7 +9,7 @@ Browser
   │
   │ HTTPS
   ▼
-Vercel — Next.js 16
+Cloudflare Workers — Next.js 16 through OpenNext
   ├─ Supabase Auth browser/server clients
   ├─ Next.js Proxy session refresh and route protection
   ├─ Dashboard, pipeline, item analysis, and task board
@@ -21,7 +21,7 @@ Render — FastAPI
   ├─ JWT/JWKS authentication and project ownership checks
   ├─ Project, item, analysis, task, and demo routers
   ├─ Agent dispatcher and synchronous analysis
-  └─ Supabase Storage service-role client
+  └─ Supabase Storage secret-key client
   │                         │
   ├─ async SQLAlchemy       └─ IBM watsonx.ai SDK
   ▼                              ▼
@@ -35,7 +35,7 @@ Supabase Storage
   └─ public assets bucket (project-scoped object paths)
 ```
 
-The frontend never receives database credentials or the Supabase service-role
+The frontend never receives database credentials or the Supabase secret
 key. It authenticates with Supabase Auth and sends the resulting JWT to FastAPI.
 FastAPI is the only application component authorized to access the four
 database tables.
@@ -225,7 +225,7 @@ item type, task status, and task priority values.
 
 Uploads are limited to 10 MB and accepted only for asset items. The backend
 validates image magic bytes, generates project-scoped object names, and uses the
-Supabase service-role client. Granite Vision fetches only URLs matching the
+Supabase secret-key client. Granite Vision fetches only URLs matching the
 configured Supabase host and public `assets` path, without redirects.
 
 The `assets` bucket must be provisioned as publicly readable because the
@@ -245,7 +245,9 @@ inaccessible to browser roles.
 
 ### Frontend
 
-- Vercel project root: `frontend/`.
+- Cloudflare Worker configuration: `frontend/wrangler.jsonc`.
+- OpenNext configuration: `frontend/open-next.config.ts`.
+- Live frontend: `https://storyops.ukexe06.workers.dev`.
 - Node.js 22.13 or newer.
 - Build fails when required public configuration is absent.
 - Supabase Auth redirect URLs must include the deployed `/auth/confirm` route.
@@ -280,7 +282,7 @@ tool. Repository evidence is organized by Bob's three modes:
 ### Agent mode
 
 - Phase work is represented by production source, migrations, tests, Docker,
-  Vercel, Render, and CI artifacts.
+  Cloudflare, Render, and CI artifacts.
 - `.bob/rules-agent/AGENTS.md` constrains Granite access, model IDs, pipeline
   ordering, recommendation shape, and dispatch separation.
 
@@ -300,8 +302,8 @@ where required by the judging rules.
 
 - Public: landing page, auth pages, `/live`, and `/health`.
 - Authenticated: projects, items, analyses, tasks, and demo seeding.
-- Secret: Supabase service-role key, database URL, and watsonx credentials.
-- Browser-visible by design: Supabase project URL, anon key, and backend API URL.
+- Secret: Supabase secret key, database URL, and watsonx credentials.
+- Browser-visible by design: Supabase project URL, publishable key, and backend API URL.
 
 Known operational controls still belong at the platform edge: request-size
 limits, rate limiting, monitoring, alerting, backups, and secret rotation.

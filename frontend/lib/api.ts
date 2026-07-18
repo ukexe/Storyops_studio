@@ -1,5 +1,5 @@
 import { getPublicEnv } from "@/lib/env"
-import { createClient as createSupabaseClient } from "@/lib/supabase/client"
+import { createClient as createSupabaseClient } from "@/utils/supabase/client"
 import type {
   Analysis,
   DemoSeedResponse,
@@ -250,7 +250,14 @@ export function deleteTask(taskId: string) {
 }
 
 export function getHealth(signal?: AbortSignal) {
-  const healthUrl = `${new URL(API_BASE_URL).origin}/health`
+  const healthUrl = /^https?:\/\//.test(API_BASE_URL)
+    ? `${new URL(API_BASE_URL).origin}/health`
+    : new URL(
+        "/health",
+        typeof window === "undefined"
+          ? "http://localhost:3000"
+          : window.location.origin,
+      ).toString()
   return apiRequest<HealthResponse>(healthUrl, {
     authenticated: false,
     signal,

@@ -16,7 +16,9 @@ class Settings(BaseSettings):
 
     # Supabase
     SUPABASE_URL: str
-    SUPABASE_SERVICE_ROLE_KEY: str
+    SUPABASE_PUBLISHABLE_KEY: str
+    SUPABASE_SECRET_KEY: str
+    SUPABASE_JWKS_URL: str
 
     # Database (Supabase session pooler for the persistent API service)
     DATABASE_URL: str

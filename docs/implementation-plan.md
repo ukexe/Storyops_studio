@@ -43,16 +43,16 @@ StoryOps Studio is an agentic AI platform that turns fragmented creative product
 
 | Layer | Technology | Rationale |
 |---|---|---|
-| Frontend | Next.js 16 (App Router, TypeScript) | App Router + Vercel zero-config deploy |
+| Frontend | Next.js 16 (App Router, TypeScript) | Cloudflare Workers via OpenNext |
 | UI Components | shadcn/ui + Tailwind CSS | Polished demo look with minimal setup |
 | Backend | FastAPI (Python 3.11) | Native `ibm-watsonx-ai` SDK; auto OpenAPI docs |
 | ORM | SQLAlchemy 2.0 (async) + Alembic | Type-safe, migration-managed |
 | Database | Supabase (PostgreSQL) | Free tier, Auth + Storage included |
-| Auth | Supabase Auth (JWT) | Anon key on frontend; service role key on backend |
+| Auth | Supabase Auth (JWT) | Publishable key on frontend; secret key on backend |
 | AI Models | IBM Granite via watsonx.ai | `granite-3-8b-instruct` for text; Granite Vision for images |
 | File Storage | Supabase Storage | Asset uploads (thumbnails, script PDFs) |
 | CI/CD | GitHub Actions | Lint + type-check on push; no auto-deploy needed for hackathon |
-| Frontend Deploy | Vercel | |
+| Frontend Deploy | Cloudflare Workers | OpenNext + Wrangler |
 | Backend Deploy | Render free tier | Docker container; `$PORT` from env |
 
 ---
@@ -489,7 +489,7 @@ The demo data in `backend/demo/` must be compelling:
 - [x] Write `docs/architecture.md` with system, schema, agent, deployment, security, and IBM Bob details
 - [x] Write `docs/demo-walkthrough.md` with acceptance checks
 - [x] Add validated frontend and backend GitHub Actions workflows
-- [ ] Verify full demo flow against deployed Vercel + Render instances
+- [ ] Verify full demo flow against deployed Cloudflare + Render instances
 - [x] Prepare the local `v1.0.0` release commit and annotated tag
 - [ ] Push the tag, publish the GitHub Release, and add the demo video URL
 
@@ -507,7 +507,9 @@ WATSONX_API_KEY=
 WATSONX_PROJECT_ID=
 WATSONX_URL=https://us-south.ml.cloud.ibm.com
 SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+SUPABASE_JWKS_URL=
 DATABASE_URL=postgresql+asyncpg://...   # Supabase session pooler, port 5432
 ENVIRONMENT=development
 CORS_ORIGINS=http://localhost:3000
@@ -517,7 +519,7 @@ ALLOW_ANONYMOUS_DEMO_SEED=false
 ### Frontend (`frontend/.env.local`)
 ```
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ```
 

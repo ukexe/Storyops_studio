@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { LogOut } from "lucide-react"
+import { House, ListTodo, LogOut } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/utils/supabase/client"
 
 interface HeaderProps {
   context?: ReactNode
@@ -62,8 +62,20 @@ export function Header({ context, children }: HeaderProps) {
 
         <div className="ml-auto flex items-center gap-2">
           {children}
+          <Button asChild variant="ghost" size="sm" className="hidden sm:flex">
+            <Link href="/">
+              <House />
+              Home
+            </Link>
+          </Button>
           <Button asChild variant="ghost" size="sm">
             <Link href="/dashboard">Dashboard</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm" className="hidden md:flex">
+            <Link href="/todos">
+              <ListTodo />
+              Todos
+            </Link>
           </Button>
           <span className="hidden max-w-48 truncate text-xs text-muted-foreground md:inline">
             {email}

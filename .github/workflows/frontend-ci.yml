@@ -23,7 +23,7 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
       NEXT_PUBLIC_API_URL: https://api.example.com/api/v1
 
     steps:

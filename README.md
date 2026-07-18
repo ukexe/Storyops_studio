@@ -3,6 +3,7 @@
 [![Release](https://img.shields.io/badge/release-v1.0.0-111827)](#release-status)
 [![Backend tests](https://img.shields.io/badge/backend%20tests-30%20passing-16a34a)](#validation)
 [![Frontend build](https://img.shields.io/badge/frontend-build%20passing-16a34a)](#validation)
+[![Live on Cloudflare](https://img.shields.io/badge/live-Cloudflare%20Workers-f97316)](https://storyops.ukexe06.workers.dev)
 [![License: MIT](https://img.shields.io/badge/license-MIT-2563eb)](LICENSE)
 
 StoryOps Studio is an AI-powered Creative Operations Command Center for
@@ -36,7 +37,7 @@ StoryOps Studio was designed for the IBM AI Builders Challenge 2026 theme
 ## Architecture
 
 ```text
-Browser → Vercel / Next.js → Render / FastAPI
+Browser → Cloudflare Workers / Next.js → Render / FastAPI
                               ├─ Supabase Postgres
                               ├─ Supabase Storage
                               └─ watsonx.ai / Granite
@@ -61,7 +62,7 @@ data flow, security controls, agent dispatch, deployment, and failure behavior.
 - Identity and storage: Supabase Auth and Storage
 - Database: Supabase PostgreSQL
 - AI: IBM watsonx.ai, Granite Instruct, Granite Vision
-- Deployment: Vercel and Render
+- Deployment: Cloudflare Workers (OpenNext) and Render
 - CI: GitHub Actions
 
 ## IBM Granite and watsonx.ai
@@ -117,7 +118,7 @@ validation.
 ### 1. Configure Supabase
 
 1. Create a Supabase project.
-2. Copy the project URL, anon key, service-role key, and session-pooler
+2. Copy the project URL, publishable key, secret key, and session-pooler
    connection string.
 3. Create a public Storage bucket named `assets`.
 4. Add local and deployed `/auth/confirm` URLs to Auth redirect URLs.
@@ -187,9 +188,12 @@ Fill the frontend values before starting:
 
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ```
+
+`NEXT_PUBLIC_API_URL` is optional for the public homepage, Supabase Auth, and
+Todos page. It is required for the full StoryOps dashboard and agent workflow.
 
 Open `http://localhost:3000`.
 
@@ -198,13 +202,15 @@ Open `http://localhost:3000`.
 Backend secrets:
 
 - `DATABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_SECRET_KEY`
 - `WATSONX_API_KEY`
 - `WATSONX_PROJECT_ID`
 
 Backend runtime configuration:
 
 - `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_JWKS_URL`
 - `WATSONX_URL`
 - `ENVIRONMENT`
 - `CORS_ORIGINS` — comma-separated exact frontend origins
@@ -213,11 +219,11 @@ Backend runtime configuration:
 Frontend public build configuration:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `NEXT_PUBLIC_API_URL`
 
 Variables prefixed with `NEXT_PUBLIC_` are intentionally browser-visible.
-Never expose the service-role key, database URL, or watsonx API key.
+Never expose the secret key, database URL, or watsonx API key.
 
 ## Demo
 
@@ -268,8 +274,9 @@ GitHub Actions run the same checks on pushes and pull requests to `main`.
 
 - Backend: import [render.yaml](render.yaml) as a Render Blueprint and supply
   all secret values.
-- Frontend: create a Vercel project with `frontend/` as the root and configure
-  all three public variables before building.
+- Frontend: `frontend/wrangler.jsonc` and OpenNext deploy the application to
+  Cloudflare Workers. The production homepage is
+  [storyops.ukexe06.workers.dev](https://storyops.ukexe06.workers.dev).
 - Supabase: apply Alembic migrations, create the `assets` bucket, and configure
   production Auth redirects.
 
@@ -280,10 +287,10 @@ secret entry must be performed by an authorized project owner.
 
 Release candidate: **v1.0.0**
 
-Local CI-equivalent checks, dependency audits, migration compilation, frontend
-production build, and Docker image validation pass. Public deployment URLs,
-GitHub workflow runs, and live Granite/Supabase smoke tests require project
-account credentials.
+Local CI-equivalent checks, dependency audits, migration compilation, OpenNext
+build, Cloudflare deployment, Supabase Auth, and Docker image validation pass.
+The supplied Supabase project does not currently contain the StoryOps or
+`todos` tables, and the FastAPI production URL is not configured.
 
 ## Documentation
 

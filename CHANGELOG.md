@@ -13,7 +13,7 @@ All notable changes to StoryOps Studio are documented here.
 - Idempotent judging demo with production fixtures
 - Supabase Auth, PostgreSQL, and Storage integration
 - Row-level security hardening and database constraints
-- Docker, Render, Vercel, and GitHub Actions configuration
+- Docker, Render, Cloudflare Workers, and GitHub Actions configuration
 - Architecture, setup, and demo documentation
 
 ### Security
@@ -37,6 +37,6 @@ All notable changes to StoryOps Studio are documented here.
 
 - Public GitHub remote and workflow runs
 - Render account provisioning and production health check
-- Vercel account provisioning and production browser smoke test
+- Production FastAPI provisioning and full dashboard smoke test
 - Live Supabase migration, Storage, Auth, and watsonx model validation
 - Public demo video URL

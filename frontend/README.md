@@ -10,6 +10,15 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
+Cloudflare validation and deployment:
+
+```bash
+npm run cf-typegen
+npx opennextjs-cloudflare build
+npx wrangler deploy --dry-run
+npm run deploy
+```
+
 Release checks:
 
 ```bash
@@ -21,3 +30,5 @@ npm run build
 
 See the [repository README](../README.md) for full setup, architecture,
 deployment, and demo instructions.
+
+Live URL: [storyops.ukexe06.workers.dev](https://storyops.ukexe06.workers.dev)

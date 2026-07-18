@@ -20,8 +20,9 @@ Confirm the deployed environment:
 6. Confirm Alembic reports revision `a4b7c2d9e001`.
 
 For local testing, use `http://localhost:3000` and
-`http://localhost:8000`. For production, use the Vercel and Render URLs
-assigned to the release environment.
+`http://localhost:8000`. The deployed frontend is
+`https://storyops.ukexe06.workers.dev`; full dashboard workflows also require
+the production FastAPI URL.
 
 ## Demo story
 
@@ -211,5 +212,5 @@ To demonstrate authoring rather than seeding:
 - Keep the final video at or below the competition time limit.
 - Show the browser and repository artifacts, especially IBM Bob rules,
   architecture, tests, and CI.
-- Do not display API keys, service-role keys, database URLs, or access tokens.
+- Do not display secret keys, database URLs, or access tokens.
 - Record real model responses and describe natural output variation.

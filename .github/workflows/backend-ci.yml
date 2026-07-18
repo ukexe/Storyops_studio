@@ -26,7 +26,9 @@ jobs:
       WATSONX_PROJECT_ID: ci-placeholder
       WATSONX_URL: https://us-south.ml.cloud.ibm.com
       SUPABASE_URL: https://ci-placeholder.supabase.co
-      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+      SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+      SUPABASE_SECRET_KEY: ci-placeholder
+      SUPABASE_JWKS_URL: https://ci-placeholder.supabase.co/auth/v1/.well-known/jwks.json
       ENVIRONMENT: test
       CORS_ORIGINS: http://localhost:3000
       ALLOW_ANONYMOUS_DEMO_SEED: "false"

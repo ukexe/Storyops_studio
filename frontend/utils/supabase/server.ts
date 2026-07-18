@@ -3,11 +3,12 @@ import { cookies } from "next/headers"
 
 import { getPublicEnv } from "@/lib/env"
 
-export async function createClient() {
-  const cookieStore = await cookies()
-  const { supabaseUrl, supabaseAnonKey } = getPublicEnv()
+export function createClient(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+) {
+  const { supabaseUrl, supabasePublishableKey } = getPublicEnv()
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return createServerClient(supabaseUrl, supabasePublishableKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll()
@@ -18,7 +19,7 @@ export async function createClient() {
             cookieStore.set(name, value, options)
           })
         } catch {
-          // Server Components cannot write cookies. Proxy refreshes sessions.
+          // Proxy refreshes cookies when Server Components cannot write them.
         }
       },
     },

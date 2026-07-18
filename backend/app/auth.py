@@ -28,9 +28,7 @@ async def _get_jwks(*, force_refresh: bool = False) -> dict[str, Any]:
     if _jwks_cache is not None and not force_refresh:
         return _jwks_cache
 
-    jwks_url = (
-        f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
-    )
+    jwks_url = settings.SUPABASE_JWKS_URL
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(jwks_url)

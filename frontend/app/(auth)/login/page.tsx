@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { safeInternalPath } from "@/lib/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/utils/supabase/client"
 
 export default function LoginPage() {
   const router = useRouter()

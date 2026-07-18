@@ -1,4 +1,4 @@
-"""Supabase Storage helper — wraps the supabase-py service-role client."""
+"""Supabase Storage helper — wraps the supabase-py secret-key client."""
 from __future__ import annotations
 
 from urllib.parse import urlparse
@@ -13,10 +13,10 @@ _supabase: Client | None = None
 
 
 def get_supabase() -> Client:
-    """Return (or create) the module-level Supabase service-role client."""
+    """Return (or create) the module-level Supabase secret-key client."""
     global _supabase
     if _supabase is None:
-        _supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+        _supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SECRET_KEY)
     return _supabase
 
 

@@ -5,8 +5,8 @@ import { getPublicEnv } from "@/lib/env"
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
-  const { supabaseUrl, supabaseAnonKey } = getPublicEnv()
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+  const { supabaseUrl, supabasePublishableKey } = getPublicEnv()
+  const supabase = createServerClient(supabaseUrl, supabasePublishableKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll()
@@ -27,9 +27,10 @@ export async function updateSession(request: NextRequest) {
   const isAuthenticated = Boolean(data?.claims?.sub)
   const pathname = request.nextUrl.pathname
   const isProtectedRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/projects")
-  const isAuthRoute =
-    pathname === "/login" || pathname === "/register"
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/projects") ||
+    pathname.startsWith("/todos")
+  const isAuthRoute = pathname === "/login" || pathname === "/register"
 
   if (!isAuthenticated && isProtectedRoute) {
     const loginUrl = request.nextUrl.clone()

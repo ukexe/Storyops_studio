@@ -22,7 +22,7 @@
 - [x] Create `backend/requirements.txt` with: `fastapi`, `uvicorn[standard]`, `sqlalchemy[asyncio]`, `asyncpg`, `alembic`, `pydantic-settings`, `python-multipart`, `httpx`
 - [x] Create `backend/requirements-dev.txt` with: `pytest`, `pytest-asyncio`, `ruff`
 - [x] Create `backend/app/main.py` — minimal FastAPI app, CORS middleware (allow all origins for dev), single `GET /` returning `{"hello": "storyops"}`
-- [x] Create `backend/app/config.py` — `pydantic-settings` class reading all required env vars; add `model_config = SettingsConfigDict(env_file=".env")`; validate `WATSONX_API_KEY`, `WATSONX_PROJECT_ID`, `WATSONX_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL` are present at import time
+- [x] Create fail-fast backend settings for watsonx, database, Supabase publishable/secret keys, and JWKS
 - [x] Create `backend/.env.example` with all six var names and empty values
 - [x] Create `frontend/` by running `npx create-next-app@latest frontend --typescript --tailwind --eslint --app --no-src-dir --import-alias "@/*"`
 - [x] Verify both services start without errors
@@ -415,7 +415,7 @@
   export const PIPELINE_STAGES = ["Idea", "Script", "Assets", "Edit", "Feedback", "Publish", "Analyze"] as const
   export type PipelineStage = typeof PIPELINE_STAGES[number]
   ```
-- [x] Create environment-specific clients under `frontend/lib/supabase/` using `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- [x] Create environment-specific clients under `frontend/utils/supabase/` using the project URL and publishable key
 - [x] Create `frontend/lib/api.ts` — async functions wrapping `fetch`:
   - `apiRequest(path, options?)` — base function; reads auth token from Supabase session; sets `Authorization: Bearer` header; throws on non-2xx
   - `getProjects()`, `createProject(data)`, `getProjectItems(id)`, `createItem(projectId, data)`, `analyzeItem(itemId)`, `getItemAnalyses(itemId)`, `getProjectTasks(projectId)`, `updateTaskStatus(taskId, status)`, `seedDemo()`
@@ -593,7 +593,9 @@
             WATSONX_PROJECT_ID: dummy
             WATSONX_URL: https://us-south.ml.cloud.ibm.com
             SUPABASE_URL: https://dummy.supabase.co
-            SUPABASE_SERVICE_ROLE_KEY: dummy
+            SUPABASE_PUBLISHABLE_KEY: dummy
+            SUPABASE_SECRET_KEY: dummy
+            SUPABASE_JWKS_URL: https://dummy.supabase.co/auth/v1/.well-known/jwks.json
   ```
 - [x] Create `.github/workflows/frontend-ci.yml`:
   ```yaml
@@ -631,18 +633,18 @@
 
 ---
 
-### T5.3 — Deployment: frontend on Vercel
-**What:** Deploy the Next.js frontend on Vercel. Wire it to the deployed backend.
+### T5.3 — Deployment: frontend on Cloudflare
+**What:** Deploy the Next.js frontend to Cloudflare Workers through OpenNext and Wrangler.
 
 **Deliverable:** `https://<vercel-url>/dashboard` loads the live app. "Seed Demo" button works end-to-end.
 
 **Steps:**
-- [x] Add and validate `frontend/vercel.json`; set project root guidance to `frontend/`
-- [x] Validate a production build with all required public environment variables
-- [ ] Connect the public GitHub repository to Vercel
-- [ ] Set production and preview values for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_API_URL`
-- [ ] Add deployed Vercel URL to Supabase Auth allowed redirect URLs
-- [ ] Deploy; navigate to dashboard; click "Seed Demo"; verify full pipeline loads with analyses and tasks
+- [x] Add OpenNext and Wrangler configuration for the `storyops` Worker
+- [x] Validate the Worker bundle and Wrangler dry run
+- [x] Deploy and smoke-test `https://storyops.ukexe06.workers.dev`
+- [x] Configure the Supabase URL and publishable key in the Worker
+- [ ] Add the deployed Cloudflare URL to Supabase Auth allowed redirect URLs
+- [ ] Configure the production FastAPI URL and verify the full dashboard pipeline
 
 ---
 
@@ -652,7 +654,7 @@
 **Deliverable:** `docs/architecture.md` exists with a complete system diagram, component descriptions, DB schema summary, agent dispatch flow, and a section explicitly documenting IBM Bob's role across the development lifecycle.
 
 **Steps:**
-- [x] Write **System Architecture** section: Browser → Vercel → Render → Supabase → watsonx.ai
+- [x] Write **System Architecture** section: Browser → Cloudflare → Render → Supabase → watsonx.ai
 - [x] Write **Component Reference** for the client, agents, dispatcher, auth, storage, and probes
 - [x] Write **Database Schema** and RLS/security decisions
 - [x] Write **Agent Dispatch Flow** from request through atomic persistence
@@ -686,7 +688,8 @@
   ```
 - [x] Write **Demo Script** section with Seed demo entry point
 - [x] Add release, local validation, and license badges
-- [ ] Replace local validation badges with live GitHub Actions and Vercel badges after account provisioning
+- [x] Add the live Cloudflare deployment badge
+- [ ] Add live GitHub Actions badges after the remote workflow run
 
 ---
 
@@ -707,7 +710,7 @@
   8. Navigate to Tasks board; show all auto-generated tasks across Todo column
   9. Mark one task "In Progress"; verify it moves column
 - [x] Run local CI-equivalent, migration, dependency, frontend build, and Docker smoke checks
-- [ ] Run the authenticated walkthrough against deployed Vercel and Render services
+- [ ] Run the full authenticated walkthrough against deployed Cloudflare and Render services
 - [x] Prepare the local `v1.0.0` release commit and annotated tag
 - [ ] Push the `v1.0.0` tag and publish a GitHub Release after authentication is available
 - [ ] Add the public demo video URL to README and release notes
