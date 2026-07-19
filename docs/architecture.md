@@ -330,7 +330,7 @@ generated visual artifacts.
 
 - Cloudflare Worker configuration: `backend/cloudflare/wrangler.jsonc`.
 - Live API: `https://storyops-api.ukexe06.workers.dev`.
-- v2.1.0 Worker version: `d3674f7c-e879-4fd3-a00d-1343d0f05eff`.
+- v2.1.0 Worker version: `fc45b72e-e5c0-4cb5-9fa4-764a7dcb9a67`.
 - Backend-only Supabase and OpenAI keys configured as Worker secrets.
 - `gpt-5.6-luna` provides production text and vision analysis.
 - Deterministic fallback agents keep every workflow functional and use
@@ -349,7 +349,7 @@ generated visual artifacts.
 - Cloudflare Worker configuration: `frontend/wrangler.jsonc`.
 - OpenNext configuration: `frontend/open-next.config.ts`.
 - Live frontend: `https://storyops.ukexe06.workers.dev`.
-- v2.1.0 Worker version: `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`.
+- v2.1.0 Worker version: `4e536aff-efff-4e6f-8aaf-6b3b1bd2ef26`.
 - Production API URL:
   `https://storyops-api.ukexe06.workers.dev/api/v1`.
 - Node.js 22.13 or newer.

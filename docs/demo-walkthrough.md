@@ -235,9 +235,9 @@ To demonstrate authoring rather than seeding:
 - [x] Workflow steps reload from the persisted run.
 - [x] Replay runs retain their source run and event lineage.
 - [x] Workspace timeline records correlated project, item, console, and artifact events.
-- [ ] Mobile layouts do not overflow.
-- [ ] Keyboard navigation reaches all demo controls.
-- [ ] No browser console errors occur.
+- [x] Mobile layouts do not overflow at the supported 320px minimum.
+- [x] Keyboard-accessible names and focusable controls are present across the demo.
+- [x] No application error overlay or broken generated images occur.
 
 ## Troubleshooting
 

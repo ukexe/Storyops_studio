@@ -338,9 +338,9 @@ Completed for v2.1.0:
 1. Applied migrations through `73ff11ca1f26`.
 2. Ran database advisors and verified constraints, indexes, RLS, browser-role
    revocations, backend grants, and private Storage.
-3. Deployed API Worker version `d3674f7c-e879-4fd3-a00d-1343d0f05eff`.
+3. Deployed API Worker version `fc45b72e-e5c0-4cb5-9fa4-764a7dcb9a67`.
 4. Built OpenNext in Linux and deployed frontend Worker version
-   `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`.
+   `4e536aff-efff-4e6f-8aaf-6b3b1bd2ef26`.
 5. Verified project and item event creation against production.
 6. Verified real OpenAI Asset Studio analysis and executive artifact generation.
 7. Verified ownership tests, cursor pagination, deep links, and public mobile

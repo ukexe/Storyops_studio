@@ -14,9 +14,15 @@ Release endpoints:
 - Schema head: `73ff11ca1f26`
 - Production reasoning model: `openai/gpt-5.6-luna`
 - Production image model: `openai/gpt-image-1.5`
+- Validated Git commit: `d210514`
+- API Worker version: `fc45b72e-e5c0-4cb5-9fa4-764a7dcb9a67`
+- Frontend Worker version: `4e536aff-efff-4e6f-8aaf-6b3b1bd2ef26`
 
-Deployment version IDs and authenticated production acceptance evidence are
-recorded after activation from the exact validated commit.
+Authenticated production acceptance verified the `2026-v2` demo seed, rich PRD
+generation, rendered Mermaid/SVG output, GPT Image 1.5 generation, private
+1536×1024 signed image delivery, workflow-step reload, timeline events, and
+source-linked replay execution. The temporary project, generated Storage
+object, and Auth user were removed after verification.
 
 ## Completed enhancements
 
@@ -175,8 +181,13 @@ Frontend:
 - Linux Node 22.13 OpenNext build: pass
 - Frontend Worker dry run: pass
 - Local public/auth browser smoke: pass
+- Authenticated production Asset Studio journey: pass
+- Real OpenAI PRD, Mermaid, and image generation: pass
+- Private generated image dimensions: 1536 × 1024
+- Source-linked replay execution: pass
 - 320px and desktop overflow checks: pass
 - No local error overlay or broken images: pass
+- Post-deploy Worker error query: zero API errors, zero frontend errors
 
 ## Known limitations
 

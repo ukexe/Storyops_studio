@@ -761,6 +761,10 @@ Deploy this path only with valid IBM watsonx credentials.
 
 ## Screenshots
 
+### Deployed v2.1 product experience
+
+<img src="docs/assets/homepage.png" alt="Deployed StoryOps Studio v2.1 AI Asset Studio homepage" width="100%" />
+
 | Experience | Link |
 |---|---|
 | Interactive product architecture and capability explorer | [Open live homepage](https://storyops.ukexe06.workers.dev) |
@@ -768,7 +772,8 @@ Deploy this path only with valid IBM watsonx credentials.
 | AI Asset Studio | Open **AI Asset Studio** inside a project |
 | Replayable enterprise timeline | Open **Timeline** inside a project |
 
-The release hero is stored under [`docs/assets/`](docs/assets/).
+The release hero and current production screenshot are stored under
+[`docs/assets/`](docs/assets/).
 
 ## Demo GIF / video
 

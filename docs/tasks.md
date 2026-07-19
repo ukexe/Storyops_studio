@@ -27,10 +27,10 @@
 - [x] Correct compound event-cursor pagination
 - [x] Add generated Wrangler type freshness checks
 - [x] Validate the OpenNext Worker artifact in CI
-- [ ] Apply migration `73ff11ca1f26` to production
-- [ ] Deploy and verify API Worker v2.1.0
-- [ ] Deploy and verify frontend Worker v2.1.0
-- [ ] Capture the refreshed production homepage screenshot
+- [x] Apply migration `73ff11ca1f26` to production
+- [x] Deploy and verify API Worker v2.1.0
+- [x] Deploy and verify frontend Worker v2.1.0
+- [x] Capture the refreshed production homepage screenshot
 
 ### Implemented in source
 
