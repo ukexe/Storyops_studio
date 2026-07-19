@@ -1,6 +1,13 @@
 "use client"
 
-import { BrainCircuit, Database, RefreshCw, Server, ShieldCheck } from "lucide-react"
+import {
+  BrainCircuit,
+  Database,
+  ImageIcon,
+  RefreshCw,
+  Server,
+  ShieldCheck,
+} from "lucide-react"
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -8,7 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/shared/Header"
-import { WatsonxStatusBadge } from "@/components/shared/WatsonxStatusBadge"
+import { ProviderStatusBadge } from "@/components/shared/ProviderStatusBadge"
 import { getHealth } from "@/lib/api"
 import type { HealthResponse } from "@/types"
 
@@ -39,12 +46,13 @@ export default function SettingsPage() {
   }, [loadHealth])
 
   const edgeFallback = health?.analysis_mode === "edge-rules"
-  const openAIActive = health?.analysis_mode === "openai"
+  const openAIConfigured = health?.analysis_mode === "openai"
+  const imageGenerationConfigured = health?.image_generation === "configured"
 
   return (
     <div className="min-h-screen bg-muted/20">
       <Header>
-        <WatsonxStatusBadge />
+        <ProviderStatusBadge />
       </Header>
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -87,8 +95,8 @@ export default function SettingsPage() {
             icon={<BrainCircuit />}
             title="Analysis runtime"
             status={
-              openAIActive
-                ? "OpenAI"
+              openAIConfigured
+                ? "OpenAI configured"
                 : edgeFallback
                 ? "Edge agents"
                 : health?.watsonx === "connected"
@@ -96,11 +104,21 @@ export default function SettingsPage() {
                   : "Checking"
             }
             detail={
-              openAIActive
-                ? `${health?.model_id ?? "OpenAI"} is active with deterministic edge fallback. Creative inputs are sent with API storage disabled.`
+              openAIConfigured
+                ? `${health?.model_id ?? "OpenAI"} is configured with deterministic edge fallback. Creative inputs are sent with API storage disabled.`
                 : edgeFallback
                 ? "Deterministic fallback agents are active and explicitly audited."
                 : "The canonical watsonx.ai agent runtime is active."
+            }
+          />
+          <StatusCard
+            icon={<ImageIcon />}
+            title="Visual generation"
+            status={imageGenerationConfigured ? "Configured" : "Unavailable"}
+            detail={
+              imageGenerationConfigured
+                ? `${health?.image_model_id ?? "OpenAI image generation"} creates private project visuals with audited model metadata.`
+                : "Visual requests fall back to a transparent production brief."
             }
           />
           <StatusCard

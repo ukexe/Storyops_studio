@@ -137,8 +137,12 @@ export default function ProjectTimelinePage() {
   function createReplayPlan(event: WorkspaceEvent) {
     if (!event.run_id) return
     sessionStorage.setItem(
+      `storyops-console-replay:${projectId}`,
+      JSON.stringify({ runId: event.run_id, eventId: event.id }),
+    )
+    sessionStorage.setItem(
       `storyops-console-draft:${projectId}`,
-      `Continue previous workflow from run ${event.run_id}. First explain the original objective, completed steps, dependencies, and any changed workspace evidence. Do not take mutating action until I approve the replay plan.`,
+      "Compare the selected historical run with current project evidence. Explain the original objective, persisted steps, changed evidence, and the proposed replay plan before any new action.",
     )
     router.push(`/projects/${projectId}/console`)
   }
@@ -221,7 +225,7 @@ export default function ProjectTimelinePage() {
                 <Button asChild size="sm">
                   <Link href={`/projects/${projectId}/console`}>
                     <Bot />
-                    Open console
+                    Open Asset Studio
                   </Link>
                 </Button>
               </div>
@@ -231,7 +235,7 @@ export default function ProjectTimelinePage() {
               {([
                 [metrics.eventCount, "Loaded events", Activity],
                 [metrics.completedRuns, "Completed runs", GitBranch],
-                [metrics.artifacts, "Reusable artifacts", FileText],
+                [metrics.artifacts, "Loaded assets", FileText],
                 [metrics.reversible, "Compensatable actions", RotateCcw],
               ] satisfies Array<[number, string, LucideIcon]>).map(
                 ([value, label, Icon]) => (
@@ -350,7 +354,7 @@ export default function ProjectTimelinePage() {
                       ))
                     ) : (
                       <p className="py-6 text-center text-xs text-muted-foreground">
-                        Console workflows will appear here.
+                        Asset Studio workflows will appear here.
                       </p>
                     )}
                     <Button

@@ -1,268 +1,243 @@
-# StoryOps Studio v2.0.0 engineering report
+# StoryOps Studio v2.1.0 engineering report
 
 ## Executive result
 
-StoryOps Studio — IP Foundry V2 is deployed:
+StoryOps Studio v2.1.0 transforms the project AI console into a multimodal AI
+Asset Studio while preserving the deployed creative-production workflow,
+canonical Granite path, ownership boundary, and explainable control plane.
+
+Release endpoints:
 
 - Frontend: <https://storyops.ukexe06.workers.dev>
 - API: <https://storyops-api.ukexe06.workers.dev>
-- GitHub release:
-  <https://github.com/ukexe/Storyops_studio/releases/tag/v2.0.0>
-- Database, Auth, and Storage: Supabase project `namuaqfivfwopaqkdjuw`
-- Schema head: `7e34a290f9de`
-- API Worker version: `d3674f7c-e879-4fd3-a00d-1343d0f05eff`
-- Frontend Worker version: `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`
+- Database, Auth, and private Storage: Supabase
+- Schema head: `73ff11ca1f26`
+- Production reasoning model: `openai/gpt-5.6-luna`
+- Production image model: `openai/gpt-image-1.5`
 
-Public probes report API v2.0.0, connected Postgres, configured OpenAI
-production inference, and explicit deterministic edge fallback.
+Deployment version IDs and authenticated production acceptance evidence are
+recorded after activation from the exact validated commit.
 
-An authenticated production smoke test verified:
+## Completed enhancements
 
-- Project creation and cleanup
-- Item creation
-- Context-aware console analysis
-- Executive impact report generation
-- Persisted conversation, workflow run, and three transparent steps
-- `openai/gpt-5.6-luna` model audit IDs
-- Artifact persistence
-- Correlated workspace timeline events
-- Temporary user and project cleanup
+### Product identity
 
-## Release scope
+- Removed all retired branding from current source, filenames, UI, prompts,
+  metadata, documentation, and vector artwork.
+- Renamed the public experience, architecture document, provider badge, and
+  historical migration filename without changing the applied revision ID or DDL.
+- Reframed simulated knowledge-map, integrations, durable workflows, and impact
+  forecasting as roadmap rather than live behavior.
+- Bumped all runtime/package versions to `2.1.0` and demo seed to `2026-v2`.
 
-### Premium product experience
+### AI Asset Studio
 
-The public homepage is now a self-guided enterprise product demonstration:
+The authenticated `/projects/[id]/console` route now supports eight guided
+categories:
 
-- Live runtime status
-- Interactive operating-console preview
-- Clickable architecture explorer
-- Discovery pipeline walkthrough
-- Capability explorer with inputs, outputs, models, value, use cases,
-  dependencies, architecture, and maturity
-- Atlas and event-timeline previews
-- Multi-agent operating model
-- Explainability and trust contract
-- Enterprise integration and roadmap views
+1. Documentation
+2. Visual
+3. Architecture
+4. Engineering
+5. Product
+6. Business
+7. Marketing
+8. Analytics
 
-Every capability is labelled **Live**, **V2 foundation**, or **Roadmap**.
+Supported durable output formats:
 
-### AI operating console
+- Rich Markdown documents
+- Mermaid diagrams and charts
+- Syntax-highlighted code
+- Structured JSON
+- Private generated images
+- Plain text fallback
 
-`/projects/[id]/console` adds:
+The template library covers PRDs, specifications, stories, acceptance criteria,
+release notes, SOPs, illustrations, storyboards, character concepts, logos,
+banners, social graphics, architecture/data-flow/sequence/deployment/ER
+diagrams, SQL, OpenAPI, JSON Schema, TypeScript types, roadmaps, sprint plans,
+risks, personas, journeys, pitch narratives, executive/ROI/market reports,
+landing/blog/launch/email/ad copy, KPI dashboards, Gantt charts, burndown
+charts, and progress reports.
 
-- Persistent project conversations
-- Page and project context handling
-- Deterministic command planning
-- Specialist routing
-- Bounded workspace snapshots
-- Structured OpenAI/Granite-compatible responses
-- Explicit deterministic fallback
-- Workflow run, progress, confidence, agent, and tool trace
-- Reusable executive and architecture artifacts
-- UI intents and next-action recommendations
+### Professional output rendering
 
-The console exposes objectives, tools, evidence, confidence, progress, model
-IDs, and outcomes. It does not claim to expose private chain-of-thought.
+- Safe `react-markdown` and GFM rendering with raw HTML disabled
+- Responsive headings, lists, tables, links, callouts, and typography
+- Prism token-based syntax highlighting and copy controls
+- Lazy-loaded Mermaid rendering with strict security mode
+- Downloadable SVG diagrams
+- Private image previews and downloads
+- Expanded asset preview dialog
+- Format-aware source downloads
+- Clear rendering failure states without exposing raw formatting by default
 
-### Enterprise workspace timeline
+### Durable asset and replay lineage
 
-`/projects/[id]/timeline` projects append-only events for:
+Alembic revision `73ff11ca1f26` adds:
 
-- Project creation and updates
-- Item creation, updates, and deletion
-- Analysis completion
-- Task updates and deletion
-- Demo seeding
-- Console start, completion, and failure
-- Artifact generation
+- `workflow_runs.replayed_from_run_id`
+- `workflow_runs.model_id`
+- `workflow_runs.prompt_version`
+- `artifacts.run_id`
+- `artifacts.format`
+- `artifacts.mime_type`
+- `artifacts.storage_path`
+- `artifacts.model_id`
+- `artifacts.content_sha256`
 
-Events include source, object, actor, model, correlation, causation, payload,
-reversibility, and timestamps. Replay planning creates a new console request;
-historical events are never edited.
+Generated images are uploaded to the private project Storage prefix before an
+artifact is marked ready. API responses add a short-lived signed URL only after
+ownership validation.
 
-### Data model
+Replay requests now carry explicit source run/event IDs. The new run links to
+its source, the start event is caused by the selected event, and inference
+receives the persisted source run, steps, events, artifacts, recent
+conversation, and current project evidence.
 
-Revision `4e0683f5a3ed` adds:
+Historical workflow steps can be reloaded through
+`GET /api/v1/runs/{run_id}/steps`.
 
-- `conversations`
-- `conversation_messages`
-- `workflow_runs`
-- `workflow_steps`
-- `artifacts`
-- `workspace_events`
+### UI and accessibility
 
-The migration adds:
+- Responsive authenticated mobile navigation
+- Global error recovery and 404 pages
+- Route-specific Asset Studio and timeline metadata
+- Guided edit scene-duration input
+- Guided views/retention/CTR input
+- Friendly structured metadata and scene timeline rendering
+- Recommended actions surfaced as reusable prompts
+- IME-safe Enter handling
+- Proper tab/tabpanel associations
+- Semantic auth-page H1 headings
+- Mobile layout verified at 320px without horizontal overflow
 
-- Database UUID defaults
-- Foreign keys and cascade behavior
-- Query-aligned and foreign-key indexes
-- Lifecycle, progress, confidence, role, and version constraints
-- Updated-at triggers
-- RLS on every table
-- Revoked `anon` and `authenticated` privileges
-- Explicit `service_role` CRUD grants
-- Conditional `storyops_app` runtime grants
+### Security and reliability
 
-Revision `7e34a290f9de` enables RLS and revokes public/browser access on
-`public.alembic_version`.
+- Disabled automatic Cloudflare invocation logs that may retain bearer headers
+- Preserved structured custom failure logs
+- Bounded Worker JSON bodies before parsing
+- Bounded declared multipart request sizes
+- Sanitized Supabase/PostgREST failures returned to clients
+- Rejected credential-bearing repository URLs
+- Corrected strict compound event-cursor pagination
+- Added `Retry-After` to rate-limit responses
+- Added API HSTS
+- Enforced project-prefix checks before private asset signing/analysis
+- Replaced full creative-content event copies with safe summaries/hashes
+- Restricted runtime event access to insert/read
+- Separated successful generation from optional timeline-refresh failures
+- Added generated-image/artifact compensation on failed runs
+- Added a 15-second canonical watsonx startup timeout
 
-Production verification confirmed all V2 tables exist, RLS is enabled, browser
-roles lack access, `service_role` has required access, and the `assets` bucket
-remains private.
+## Performance and developer experience
 
-## AI architecture
+- Mermaid is dynamically imported only when a diagram is rendered.
+- The Asset Studio remains isolated to its route bundle.
+- Project metrics no longer derive entirely from the 24-item prompt window.
+- Recent conversation and artifact context is bounded.
+- Generated Cloudflare environment types are checked in CI.
+- Frontend CI now builds and dry-runs the actual OpenNext Worker.
+- API CI checks Wrangler bindings and the release bundle.
+- Public Next.js `X-Powered-By` is disabled.
 
-### Production
+Validated bundle sizes:
 
-The Cloudflare Worker calls the OpenAI Responses API:
-
-- Model: `gpt-5.6-luna`
-- Strict structured output
-- Text and low-detail vision input
-- Bounded content, metadata, output, and deadline
-- `store: false`
-- No model-side tools
-- Server-side specialist and tool selection
-- Explicit `openai/<model>` audit IDs
-- Deterministic StoryOps fallback
-
-### Canonical IBM path
-
-The FastAPI implementation retains:
-
-- Granite Instruct Brief Agent
-- Granite Instruct Script Agent
-- Granite Vision Asset Agent
-- Deterministic Edit, Feedback, and Performance agents
-- Granite-compatible console synthesis
-- Bounded concurrent inference and timeouts
-
-This path is implemented but requires valid IBM credentials and a deployed
-Python runtime before it can be described as production-active.
-
-## Security result
-
-Implemented controls:
-
-- Supabase JWT validation
-- Non-anonymous identity requirement
-- Project ownership checks
-- Cross-tenant `404` behavior
-- RLS-enabled application and control-plane tables
-- Revoked browser table access
-- Private assets with signed reads
-- Image size and magic-byte validation
-- Non-asset file rejection in both APIs
-- Exact-origin CORS
-- Environment-derived CSP connect/image origins
-- Production HSTS, frame denial, referrer policy, and permissions policy
-- Development-only `unsafe-eval` for React debugging
-- Secret-only provider credentials
-- OpenAI API storage disabled
-- Prompt-injection separation for untrusted creative content
-- Sanitized provider and persistence errors
-- Git history and dependency scanning
-
-Supabase database advisors report no remaining database security or performance
-errors. The only remaining platform warning is **Leaked Password Protection
-Disabled**. Supabase exposes this feature on eligible paid plans/entitlements;
-enable it in Auth settings when available.
-
-## Reliability improvements
-
-- Edge analysis removes a newly inserted analysis if generated-task inspection
-  or insertion fails.
-- Latest-analysis ordering is deterministic on timestamp and UUID.
-- Item-type changes clear stale upload state.
-- Edit/performance metadata is visible on item detail.
-- Legacy demo thumbnails render as trusted embedded image data.
-- Sign-out failures produce a visible error instead of leaving the header stuck.
-- Console failures create failed run and timeline records.
-- Event cursor pagination excludes page-boundary duplicates.
+- API Worker: 883.70 KiB upload / 200.71 KiB gzip
+- Frontend Worker: 16,849.93 KiB upload / 3,478.89 KiB gzip
 
 ## Validation results
 
-### Canonical backend
+Canonical backend:
 
 - Ruff: pass
-- Pytest: 38 pass
-- Python compilation: pass
-- Alembic graph: one head at `7e34a290f9de`
+- Pytest: 39 pass
+- pip-audit: no known vulnerabilities
+- Alembic: one head at `73ff11ca1f26`
 - Full PostgreSQL SQL compilation: pass
-- Production migration: pass
-- Production RLS/grant/storage assertions: pass
 
-### Edge API
+Production edge API:
 
-- Vitest: 8 pass
+- Vitest: 9 pass
 - TypeScript: pass
+- Generated Wrangler bindings: current
+- npm audit: 0 vulnerabilities
 - Wrangler dry run: pass
-- Production deploy: pass
-- Public `/`, `/live`, and `/health`: pass
-- Authenticated V2 control-plane smoke: pass
-- Real OpenAI console analysis: pass
-- Real OpenAI executive artifact generation: pass
 
-### Frontend
+Frontend:
 
 - ESLint: pass
-- Vitest: 3 pass
+- Vitest: 5 pass
 - Route-aware TypeScript: pass
-- Linux OpenNext build in Node 22.13 container: pass
-- Static generation for all routes: pass
-- Cloudflare asset and Worker deploy: pass
-- Public homepage hydration and live status: pass
-- Mobile-width overflow check: pass
-- Production screenshot capture: pass
+- Generated Wrangler bindings: current
+- npm audit: 0 vulnerabilities
+- Linux Node 22.13 OpenNext build: pass
+- Frontend Worker dry run: pass
+- Local public/auth browser smoke: pass
+- 320px and desktop overflow checks: pass
+- No local error overlay or broken images: pass
 
-The native Windows Next.js builder still encounters an upstream Turbopack
-`kill EPERM` process-cleanup issue after successful compilation and TypeScript.
-The release artifact was therefore built in a clean Linux Node 22.13 container,
-matching GitHub Actions and Cloudflare.
+## Known limitations
 
-## Public-repository polish
+- Image editing, masks, and multi-reference variants are not implemented.
+- Audio and video generation require separate asynchronous provider workflows.
+- True PPTX/PDF generation is deferred; presentation narratives are rendered
+  and downloadable as rich documents.
+- Durable background jobs, distributed quotas, organizations/RBAC,
+  collaboration, semantic search, and project knowledge maps remain roadmap.
+- Project deletion remains the governed purge boundary for workspace events.
+- The production API and frontend must be deployed in schema-first order.
 
-Added or updated:
+## Intentionally deferred recommendations
 
-- Premium root README
-- Mermaid runtime, AI sequence, and data-model diagrams
-- Detailed IBM Bob lifecycle evidence
-- Detailed AI implementation explanation
-- Complete environment-variable reference
-- Local setup and Cloudflare deployment instructions
-- Deployment and rollback runbook
-- Security policy
-- Contributing guide
-- Vector hero artwork
-- Production homepage screenshot
-- V2 architecture and task tracking
-- Release changelog and package versions
+### Durable generation jobs
 
-## IBM Bob evidence
+- Problem: long image/file generation remains request-bound.
+- Value: resumable progress, retries, cancellation, and cost governance.
+- Complexity: High.
+- Priority: High after the hackathon release.
+- Reason deferred: requires Cloudflare Workflows/Queues and a job-state UI.
 
-IBM Bob is documented as the SDLC partner across:
+### Organization collaboration and approvals
 
-- Problem selection and brainstorming
-- Architecture and data modelling
-- Dependency-ordered planning
-- Frontend, backend, migration, and test generation
-- Auth, deployment, storage, and provider debugging
-- Refactoring and contract alignment
-- UI iteration and accessibility
-- Release hardening and documentation
+- Problem: ownership is single-user and artifact status has no approval flow.
+- Value: reviewer roles, comments, controlled publication, and agency workflows.
+- Complexity: High.
+- Priority: Medium.
+- Reason deferred: requires a membership/RBAC policy model and migration.
 
-Repository evidence is stored in `.bob/`, `AGENTS.md`, `docs/`, tests, CI, and
-release artifacts. Genuine Bob session screenshots or exports remain part of
-the final external submission media pack.
+### Source parsing and semantic retrieval
 
-## Remaining submission-media work
+- Problem: project context comes from bounded item text, not parsed long files.
+- Value: evidence-addressable citations and cross-project discovery.
+- Complexity: High.
+- Priority: Medium.
+- Reason deferred: requires source versions, chunks, embeddings, authorized
+  retrieval, and freshness management.
 
-1. Publish the final demo video or GIF URL.
-2. Add genuine IBM Bob session screenshots/exports if required by the challenge.
-3. Optionally enable Supabase leaked-password protection on an eligible plan.
-4. Optionally deploy the canonical FastAPI/Granite runtime with valid IBM
-   credentials.
+### Asset revisions and visual editing
 
-These are external media, entitlement, or credential gates. The V2 Cloudflare,
-Supabase, and OpenAI production workflow is deployed and verified.
+- Problem: generated assets are immutable outputs rather than editable variant
+  trees.
+- Value: image edits, masks, comparison, approval, and brand iteration.
+- Complexity: Medium to High.
+- Priority: Medium.
+- Reason deferred: generation and durable storage were prioritized over a
+  rushed editor.
+
+### Distributed quotas and cost telemetry
+
+- Problem: current in-memory request limits are load-smoothing only.
+- Value: predictable spend and abuse resistance.
+- Complexity: Medium.
+- Priority: High before broad public access.
+- Reason deferred: requires a durable limiter and account/project budget model.
+
+## External submission work
+
+- Publish the final public demo video/GIF URL.
+- Include genuine IBM Bob session screenshots/exports where challenge rules
+  require them.
+- Optionally deploy the canonical FastAPI/Granite runtime after valid IBM
+  credentials and a supported model entitlement are available.

@@ -95,6 +95,10 @@ jobs:
         run: npm run typecheck
         working-directory: backend/cloudflare
 
+      - name: Check edge Worker binding types
+        run: npm run cf-typecheck
+        working-directory: backend/cloudflare
+
       - name: Test edge analysis rules
         run: npm test
         working-directory: backend/cloudflare

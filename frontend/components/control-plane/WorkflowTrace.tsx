@@ -46,6 +46,21 @@ const STEP_META: Record<
   },
 }
 
+function label(value: string) {
+  return value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
+function scalarEntries(value: Record<string, unknown>) {
+  return Object.entries(value).filter(
+    ([, entry]) =>
+      typeof entry === "string" ||
+      typeof entry === "number" ||
+      typeof entry === "boolean",
+  )
+}
+
 export function WorkflowTrace({
   run,
   steps,
@@ -91,7 +106,19 @@ export function WorkflowTrace({
               ? "pending"
               : `${Math.round(run.confidence * 100)}%`}
           </span>
+          {run.model_id ? <span>Model: {run.model_id}</span> : null}
+          {run.prompt_version ? <span>Prompt: {run.prompt_version}</span> : null}
         </div>
+        {run.replayed_from_run_id ? (
+          <p className="mt-3 rounded-lg border bg-background px-3 py-2 font-mono text-[10px] text-muted-foreground">
+            Replayed from {run.replayed_from_run_id}
+          </p>
+        ) : null}
+        {run.error ? (
+          <p className="mt-3 text-xs text-destructive">
+            Run stopped: {run.error}
+          </p>
+        ) : null}
       </div>
 
       <div className="mt-4 space-y-2">
@@ -120,6 +147,23 @@ export function WorkflowTrace({
                     <p className="mt-2 text-[10px] text-muted-foreground">
                       Confidence {Math.round(step.confidence * 100)}%
                     </p>
+                  ) : null}
+                  {step.dependencies.length ? (
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      Depends on step {step.dependencies.join(", ")}
+                    </p>
+                  ) : null}
+                  {scalarEntries(step.output_data).length ? (
+                    <dl className="mt-3 grid gap-2 border-t pt-3 text-[10px] sm:grid-cols-2">
+                      {scalarEntries(step.output_data).map(([key, value]) => (
+                        <div key={key}>
+                          <dt className="text-muted-foreground">{label(key)}</dt>
+                          <dd className="mt-0.5 break-words font-mono">
+                            {String(value)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
                   ) : null}
                 </div>
               </div>

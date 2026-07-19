@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { RichContent } from "@/components/ai/RichContent"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -56,6 +57,28 @@ function timestamp(value: string) {
     minute: "2-digit",
     second: "2-digit",
   }).format(new Date(value))
+}
+
+function eventDetails(payload: Record<string, unknown>) {
+  return Object.entries(payload)
+    .map(([key, value]) => {
+      if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+      ) {
+        return [key, String(value)] as const
+      }
+      if (
+        Array.isArray(value) &&
+        value.every((entry) => ["string", "number", "boolean"].includes(typeof entry))
+      ) {
+        return [key, value.join(", ")] as const
+      }
+      return null
+    })
+    .filter((entry): entry is readonly [string, string] => entry !== null)
+    .slice(0, 8)
 }
 
 interface WorkspaceTimelineProps {
@@ -189,9 +212,7 @@ export function WorkspaceTimeline({
                   {selected ? (
                     <div className="mt-3 space-y-3 border-t pt-3">
                       {event.summary ? (
-                        <p className="text-xs leading-5 text-muted-foreground">
-                          {event.summary}
-                        </p>
+                        <RichContent content={event.summary} compact />
                       ) : null}
                       <dl className="grid gap-2 text-[10px] sm:grid-cols-2">
                         <div>
@@ -214,7 +235,36 @@ export function WorkspaceTimeline({
                             </dd>
                           </div>
                         ) : null}
+                        <div>
+                          <dt className="text-muted-foreground">Object</dt>
+                          <dd className="mt-0.5 break-all font-mono">
+                            {event.object_type}
+                            {event.object_id
+                              ? ` · ${event.object_id.slice(0, 8)}`
+                              : ""}
+                          </dd>
+                        </div>
+                        {event.causation_id ? (
+                          <div>
+                            <dt className="text-muted-foreground">Caused by</dt>
+                            <dd className="mt-0.5 truncate font-mono">
+                              {event.causation_id}
+                            </dd>
+                          </div>
+                        ) : null}
                       </dl>
+                      {eventDetails(event.payload).length ? (
+                        <dl className="grid gap-2 rounded-lg bg-muted/30 p-3 text-[10px] sm:grid-cols-2">
+                          {eventDetails(event.payload).map(([key, value]) => (
+                            <div key={key}>
+                              <dt className="capitalize text-muted-foreground">
+                                {key.replaceAll("_", " ")}
+                              </dt>
+                              <dd className="mt-0.5 break-words">{value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : null}
                       {onReplayFrom && event.run_id ? (
                         <Button
                           type="button"

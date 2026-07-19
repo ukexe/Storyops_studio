@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   deterministicGeneration,
+  openAIImageGeneration,
   planCommand,
 } from "./control-plane"
 import {
@@ -17,6 +18,7 @@ const env: WorkerEnv = {
   CORS_ORIGINS: "https://storyops.example",
   OPENAI_API_KEY: "test-openai-key",
   OPENAI_MODEL: "gpt-5.6-luna",
+  OPENAI_IMAGE_MODEL: "gpt-image-1.5",
 }
 
 afterEach(() => {
@@ -129,7 +131,7 @@ describe("OpenAI analysis provider", () => {
     expect(body.text.format.type).toBe("json_schema")
   })
 
-  it("sends trusted image bytes as a low-detail vision input", async () => {
+  it("sends trusted image bytes as a high-detail vision input", async () => {
     const request = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -154,7 +156,7 @@ describe("OpenAI analysis provider", () => {
     const body = JSON.parse(String(options.body))
     expect(body.input[0].content[1]).toMatchObject({
       type: "input_image",
-      detail: "low",
+      detail: "high",
     })
     expect(body.input[0].content[1].image_url).toMatch(
       /^data:image\/jpeg;base64,/,
@@ -162,7 +164,7 @@ describe("OpenAI analysis provider", () => {
   })
 })
 
-describe("IP Foundry control plane", () => {
+describe("StoryOps intelligence control plane", () => {
   it("routes report requests to the impact specialist and artifact writer", () => {
     const plan = planCommand(
       "Generate an executive impact report.",
@@ -184,7 +186,8 @@ describe("IP Foundry control plane", () => {
       project: { name: "Pattern Library" },
       metrics: {
         total_items: 2,
-        total_analyses: 1,
+        analyzed_items: 1,
+        total_analysis_records: 1,
         task_status_counts: { todo: 1, in_progress: 0, done: 0 },
       },
       items: [
@@ -200,8 +203,60 @@ describe("IP Foundry control plane", () => {
       ],
     })
 
-    expect(result.modelId).toBe("storyops/control-plane-rules-v1")
+    expect(result.modelId).toBe("storyops/control-plane-rules-v2")
     expect(result.response).toContain("2 items")
     expect(result.recommendedActions[0]).toContain("Unreviewed script")
+  })
+
+  it("routes visual requests through private image generation", async () => {
+    const request = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          id: "resp_visual",
+          output: [
+            {
+              id: "ig_123",
+              type: "image_generation_call",
+              status: "completed",
+              revised_prompt:
+                "An original launch graphic with a clear editorial focal point.",
+              result: "/9j/AA==",
+            },
+          ],
+          usage: { total_tokens: 120 },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    vi.stubGlobal("fetch", request)
+    const plan = planCommand(
+      "Generate a launch campaign graphic.",
+      "00000000-0000-4000-8000-000000000001",
+    )
+
+    expect(plan.intent).toBe("visual_asset")
+    expect(plan.artifactFormat).toBe("image")
+
+    const result = await openAIImageGeneration(
+      env,
+      "Generate a launch campaign graphic.",
+      plan,
+      {
+        project: { name: "Launch campaign" },
+        metrics: { total_items: 4 },
+      },
+    )
+
+    expect(result.modelId).toBe("openai/gpt-image-1.5")
+    expect(result.binaryArtifact?.mimeType).toBe("image/jpeg")
+    expect(result.artifactFormat).toBe("image")
+    const [, options] = request.mock.calls[0]
+    const body = JSON.parse(String(options.body))
+    expect(body.store).toBe(false)
+    expect(body.tools[0]).toMatchObject({
+      type: "image_generation",
+      model: "gpt-image-1.5",
+      output_format: "jpeg",
+    })
   })
 })

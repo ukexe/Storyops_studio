@@ -68,7 +68,9 @@ export default function RegisterPage() {
           <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
             <MailCheck className="size-5" />
           </div>
-          <CardTitle>Check your email</CardTitle>
+          <CardTitle>
+            <h1>Check your email</h1>
+          </CardTitle>
           <CardDescription>
             We sent a confirmation link to {email}. Open it to activate your
             StoryOps workspace.
@@ -86,7 +88,9 @@ export default function RegisterPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create your workspace</CardTitle>
+        <CardTitle>
+          <h1>Create your workspace</h1>
+        </CardTitle>
         <CardDescription>
           Start coordinating briefs, scripts, assets, and AI recommendations.
         </CardDescription>

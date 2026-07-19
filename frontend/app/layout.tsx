@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s · StoryOps Studio",
   },
   description:
-    "An AI-powered creative operations command center built with IBM Bob, OpenAI, and a watsonx-ready agent architecture.",
+    "StoryOps Studio unifies creative production, specialist AI analysis, project assets, accountable tasks, and an explainable workflow timeline.",
 };
 
 export default function RootLayout({

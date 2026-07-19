@@ -14,7 +14,12 @@ from app.agents.base_agent import (
     parse_json_response,
 )
 from app.models.item import Item
-from app.storage import download_asset, is_asset_path, is_public_asset_url
+from app.storage import (
+    download_asset,
+    is_asset_path,
+    is_asset_path_for_project,
+    is_public_asset_url,
+)
 
 ASSET_MODEL_ID = "ibm/granite-vision-3-2-2b"
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
@@ -26,6 +31,11 @@ class AssetAgent(AgentBase):
     async def analyze(self, item: Item) -> AnalysisResult:
         if not item.file_url:
             raise ValueError("Asset items require a file_url")
+        if is_asset_path(item.file_url) and not is_asset_path_for_project(
+            item.file_url,
+            item.project_id,
+        ):
+            raise ValueError("Asset path does not belong to the item project")
 
         image_bytes = await _fetch_image_bytes(item.file_url)
         prompt = """

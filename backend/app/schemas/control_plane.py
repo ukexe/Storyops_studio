@@ -30,6 +30,7 @@ StepStatus = Literal[
     "skipped",
 ]
 ArtifactStatus = Literal["draft", "ready", "approved", "archived"]
+ArtifactFormat = Literal["markdown", "mermaid", "code", "json", "image", "text"]
 EventSource = Literal["user", "agent", "tool", "workflow", "system"]
 
 
@@ -38,6 +39,8 @@ class ConsoleTurnCreate(BaseModel):
 
     message: str = Field(min_length=1, max_length=MAX_CONSOLE_MESSAGE_LENGTH)
     conversation_id: uuid.UUID | None = None
+    replay_from_run_id: uuid.UUID | None = None
+    replay_from_event_id: uuid.UUID | None = None
     context: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("message")
@@ -107,11 +110,14 @@ class WorkflowRunResponse(BaseModel):
     id: uuid.UUID
     project_id: uuid.UUID
     conversation_id: uuid.UUID | None
+    replayed_from_run_id: uuid.UUID | None
     run_type: str
     objective: str
     status: RunStatus
     progress: int
     current_agent: str | None
+    model_id: str | None
+    prompt_version: str | None
     confidence: float | None
     error: str | None
     started_at: datetime | None
@@ -126,9 +132,16 @@ class ArtifactResponse(BaseModel):
     project_id: uuid.UUID
     conversation_id: uuid.UUID | None
     source_message_id: uuid.UUID | None
+    run_id: uuid.UUID | None
     type: str
     title: str
     content: str
+    format: ArtifactFormat
+    mime_type: str | None
+    storage_path: str | None
+    content_url: str | None = None
+    model_id: str | None
+    content_sha256: str | None
     metadata: dict[str, Any] = Field(validation_alias="artifact_metadata")
     status: ArtifactStatus
     version: int

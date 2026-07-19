@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.constants import PIPELINE_STAGES
 from app.database import get_db
+from app.models.artifact import Artifact
 from app.models.item import Item
 from app.models.project import Project
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
@@ -181,7 +182,7 @@ async def delete_project(
 ) -> None:
     """Hard-delete a project and all its cascade-linked records."""
     project = await _get_owned_project(project_id, user["user_id"], db)
-    asset_urls = (
+    item_asset_urls = (
         await db.execute(
             select(Item.file_url).where(
                 Item.project_id == project_id,
@@ -189,9 +190,17 @@ async def delete_project(
             )
         )
     ).scalars().all()
+    generated_asset_urls = (
+        await db.execute(
+            select(Artifact.storage_path).where(
+                Artifact.project_id == project_id,
+                Artifact.storage_path.is_not(None),
+            )
+        )
+    ).scalars().all()
     await db.delete(project)
     await db.commit()
-    for asset_url in asset_urls:
+    for asset_url in [*item_asset_urls, *generated_asset_urls]:
         try:
             await asyncio.to_thread(delete_asset_url, asset_url)
         except Exception:  # noqa: BLE001

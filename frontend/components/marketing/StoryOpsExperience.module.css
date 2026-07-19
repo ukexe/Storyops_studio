@@ -1,20 +1,20 @@
-.foundryHome {
+.storyOpsHome {
   --primary: oklch(0.53 0.19 255);
   --primary-foreground: oklch(0.99 0.01 250);
   --ring: oklch(0.64 0.16 250);
-  --foundry-cyan: oklch(0.72 0.14 210);
-  --foundry-violet: oklch(0.62 0.18 285);
-  --foundry-emerald: oklch(0.67 0.16 160);
+  --storyops-cyan: oklch(0.72 0.14 210);
+  --storyops-violet: oklch(0.62 0.18 285);
+  --storyops-emerald: oklch(0.67 0.16 160);
   isolation: isolate;
 }
 
-:global(.dark) .foundryHome {
+:global(.dark) .storyOpsHome {
   --primary: oklch(0.72 0.14 245);
   --primary-foreground: oklch(0.15 0.03 255);
   --ring: oklch(0.72 0.14 245);
-  --foundry-cyan: oklch(0.78 0.12 205);
-  --foundry-violet: oklch(0.73 0.15 290);
-  --foundry-emerald: oklch(0.75 0.14 160);
+  --storyops-cyan: oklch(0.78 0.12 205);
+  --storyops-violet: oklch(0.73 0.15 290);
+  --storyops-emerald: oklch(0.75 0.14 160);
 }
 
 .heroBackdrop {
@@ -26,7 +26,7 @@
     ),
     radial-gradient(
       circle at 88% 8%,
-      color-mix(in oklab, var(--foundry-cyan) 13%, transparent),
+      color-mix(in oklab, var(--storyops-cyan) 13%, transparent),
       transparent 29%
     ),
     linear-gradient(
@@ -61,7 +61,7 @@
   animation: ambient-drift 9s ease-in-out infinite;
   background: radial-gradient(
     circle,
-    color-mix(in oklab, var(--foundry-cyan) 34%, transparent),
+    color-mix(in oklab, var(--storyops-cyan) 34%, transparent),
     transparent 68%
   );
   filter: blur(2px);
@@ -110,7 +110,7 @@
   animation-delay: 2.2s;
 }
 
-.atlasSurface {
+.knowledgeMapSurface {
   background:
     radial-gradient(
       circle at 50% 50%,
@@ -120,14 +120,14 @@
     color-mix(in oklab, var(--muted) 22%, transparent);
 }
 
-.atlasLine {
+.knowledgeMapLine {
   stroke: color-mix(in oklab, var(--primary) 46%, var(--border));
   stroke-dasharray: 6 7;
   animation: dash-shift 12s linear infinite;
 }
 
-.atlasLineSecondary {
-  stroke: color-mix(in oklab, var(--foundry-cyan) 35%, var(--border));
+.knowledgeMapLineSecondary {
+  stroke: color-mix(in oklab, var(--storyops-cyan) 35%, var(--border));
   stroke-dasharray: 3 8;
   animation: dash-shift 16s linear infinite reverse;
 }
@@ -136,7 +136,7 @@
   background: linear-gradient(
     180deg,
     color-mix(in oklab, var(--primary) 72%, transparent),
-    color-mix(in oklab, var(--foundry-cyan) 28%, var(--border))
+    color-mix(in oklab, var(--storyops-cyan) 28%, var(--border))
   );
 }
 
@@ -181,7 +181,7 @@
 
 @keyframes status-pulse {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--foundry-emerald) 45%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--storyops-emerald) 45%, transparent);
   }
   70%,
   100% {
@@ -241,8 +241,8 @@
   .statusPulse,
   .flowLine::after,
   .agentNode,
-  .atlasLine,
-  .atlasLineSecondary,
+  .knowledgeMapLine,
+  .knowledgeMapLineSecondary,
   .featureReveal,
   .consoleCursor,
   .metricBar {

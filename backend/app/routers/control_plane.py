@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import binascii
 import uuid
@@ -15,7 +16,7 @@ from app.database import get_db
 from app.models.artifact import Artifact
 from app.models.conversation import Conversation, ConversationMessage
 from app.models.project import Project
-from app.models.workflow import WorkflowRun
+from app.models.workflow import WorkflowRun, WorkflowStep
 from app.models.workspace_event import WorkspaceEvent
 from app.rate_limit import enforce_rate_limit
 from app.schemas.control_plane import (
@@ -30,6 +31,7 @@ from app.schemas.control_plane import (
     WorkflowStepResponse,
 )
 from app.services.control_plane import execute_console_turn
+from app.storage import create_signed_asset_url, is_asset_path_for_project
 
 router = APIRouter(tags=["control-plane"])
 
@@ -78,6 +80,45 @@ async def _owned_conversation(
     return conversation
 
 
+async def _owned_run(
+    run_id: uuid.UUID,
+    user_id: uuid.UUID,
+    db: AsyncSession,
+) -> WorkflowRun:
+    run = await db.scalar(
+        select(WorkflowRun)
+        .join(Project, Project.id == WorkflowRun.project_id)
+        .where(
+            WorkflowRun.id == run_id,
+            Project.owner_id == user_id,
+        )
+    )
+    if run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Workflow run not found",
+        )
+    return run
+
+
+async def _artifact_response(artifact: Artifact) -> ArtifactResponse:
+    response = ArtifactResponse.model_validate(artifact)
+    if artifact.storage_path:
+        if not is_asset_path_for_project(
+            artifact.storage_path,
+            artifact.project_id,
+        ):
+            return response
+        try:
+            response.content_url = await asyncio.to_thread(
+                create_signed_asset_url,
+                artifact.storage_path,
+            )
+        except Exception:  # noqa: BLE001
+            response.content_url = None
+    return response
+
+
 @router.post(
     "/projects/{project_id}/console/turns",
     response_model=ConsoleTurnResponse,
@@ -104,14 +145,14 @@ async def create_console_turn(
             request=body,
         )
     except ValueError as exc:
-        if str(exc) == "Conversation not found in this workspace":
+        if "not found in this workspace" in str(exc):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=str(exc),
             ) from exc
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="The operating-console request could not be completed",
+            detail="The AI Asset Studio request could not be completed",
         ) from exc
 
     return ConsoleTurnResponse(
@@ -125,7 +166,7 @@ async def create_console_turn(
             WorkflowStepResponse.model_validate(step) for step in result.steps
         ],
         artifacts=[
-            ArtifactResponse.model_validate(artifact) for artifact in result.artifacts
+            await _artifact_response(artifact) for artifact in result.artifacts
         ],
         ui_intents=result.ui_intents,
         recommended_actions=result.recommended_actions,
@@ -209,7 +250,7 @@ async def list_artifacts(
             .limit(limit)
         )
     ).all()
-    return [ArtifactResponse.model_validate(artifact) for artifact in artifacts]
+    return list(await asyncio.gather(*(_artifact_response(value) for value in artifacts)))
 
 
 @router.get(
@@ -233,6 +274,27 @@ async def list_workflow_runs(
         )
     ).all()
     return [WorkflowRunResponse.model_validate(run) for run in runs]
+
+
+@router.get(
+    "/runs/{run_id}/steps",
+    response_model=list[WorkflowStepResponse],
+)
+async def list_workflow_steps(
+    run_id: uuid.UUID,
+    db: DB,
+    user: CurrentUser,
+) -> list[WorkflowStepResponse]:
+    user_id = uuid.UUID(user["user_id"])
+    await _owned_run(run_id, user_id, db)
+    steps = (
+        await db.scalars(
+            select(WorkflowStep)
+            .where(WorkflowStep.run_id == run_id)
+            .order_by(WorkflowStep.sequence.asc(), WorkflowStep.id.asc())
+        )
+    ).all()
+    return [WorkflowStepResponse.model_validate(step) for step in steps]
 
 
 @router.get(

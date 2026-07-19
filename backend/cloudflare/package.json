@@ -1,13 +1,19 @@
 {
   "name": "storyops-api-cloudflare",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "wrangler dev",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
+    "cf-typegen": "wrangler types --config wrangler.types.jsonc --env-interface CloudflareEnv --include-runtime false --strict-vars false worker-configuration.d.ts",
+    "cf-typecheck": "wrangler types --config wrangler.types.jsonc --env-interface CloudflareEnv --include-runtime false --strict-vars false worker-configuration.d.ts --check",
     "dry-run": "wrangler deploy --dry-run",
     "deploy": "wrangler deploy"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260718.1",

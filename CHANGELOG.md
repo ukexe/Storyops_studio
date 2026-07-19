@@ -2,14 +2,61 @@
 
 All notable changes to StoryOps Studio are documented here.
 
+## [2.1.0] - 2026-07-19
+
+### Added
+
+- Multimodal AI Asset Studio with guided Documentation, Visual, Architecture,
+  Engineering, Product, Business, Marketing, and Analytics templates
+- OpenAI image generation through GPT Image 1.5 with private Supabase Storage,
+  signed previews, explicit model IDs, and deterministic visual-brief fallback
+- Safe rich Markdown/GFM output with headings, lists, tables, callouts, links,
+  syntax-highlighted code, Mermaid diagrams, charts, and SVG export
+- First-class artifact format, MIME, storage, model, prompt, workflow-run, and
+  SHA-256 lineage through Alembic revision `73ff11ca1f26`
+- Reloadable workflow steps and evidence-grounded replay source run/event links
+- Responsive application navigation, global error recovery, and 404 UI
+- Guided edit-timeline and performance-metric forms plus friendly metadata views
+
+### Changed
+
+- Removed all retired branding from current source, UI, prompts, metadata,
+  documentation, filenames, and vector assets
+- Reframed public roadmap simulations as roadmap and aligned homepage claims
+  with implemented specialist routing
+- Bumped the idempotent demo seed to `2026-v2`
+- Upgraded visual analysis from low-detail to high-detail image input
+- Persisted recent conversation, artifact, and replay evidence in model context
+- Made generated recommendations actionable in the Asset Studio UI
+- Added OpenNext Worker builds, Wrangler dry runs, and generated binding checks
+  to CI
+
+### Security and reliability
+
+- Disabled automatic Cloudflare invocation logs that may retain auth headers
+- Bounded Worker JSON bodies before parsing and declared multipart upload sizes
+- Sanitized Supabase/PostgREST failures returned to clients
+- Corrected compound event-cursor pagination
+- Rejected credential-bearing repository URLs
+- Restricted runtime event-ledger privileges to insert and read
+- Replaced full creative-content event copies with safe summaries/hashes
+- Enforced project-prefix checks before private asset signing or analysis
+- Separated completed console writes from optional timeline-refresh failures
+
+### Validation
+
+- Expanded canonical backend tests for artifact lineage, step reload, and replay
+- Expanded Worker tests for high-detail vision and image-generation request shape
+- Added current migration-head and binding-freshness release gates
+
 ## [2.0.0] - 2026-07-19
 
 ### Added
 
 - Interactive enterprise product homepage with live architecture, console,
-  capability, discovery pipeline, Atlas, timeline, agent, integration, and
+  capability, discovery pipeline, Knowledge map, timeline, agent, integration, and
   roadmap explorers
-- Authenticated project AI operating console with durable conversations,
+- Authenticated project AI Asset Studio with durable conversations,
   messages, workflow runs, transparent steps, typed tool receipts, confidence,
   model audit IDs, recommended actions, and UI intents
 - Reusable executive-report and architecture artifacts with source-message,
@@ -21,7 +68,7 @@ All notable changes to StoryOps Studio are documented here.
   indexes, RLS hardening, and explicit backend Data API grants
 - Alembic revision `7e34a290f9de` protecting migration metadata from public
   Data API access
-- Matching FastAPI/Granite and Cloudflare/OpenAI console contracts with
+- Matching FastAPI/Granite and Cloudflare/OpenAI Asset Studio contracts with
   deterministic audited fallback
 - Control-plane ownership, persistence, artifact, fallback, pagination, and
   event tests
@@ -40,14 +87,14 @@ All notable changes to StoryOps Studio are documented here.
   missing frontend path.
 - Edge analysis compensates by removing a newly inserted analysis when task
   inspection or persistence fails.
-- Project navigation exposes the AI console and workspace timeline.
+- Project navigation exposes the AI Asset Studio and workspace timeline.
 
 ### Validation and deployment
 
 - Applied and verified the production schema through `7e34a290f9de`.
 - Deployed API Worker version `d3674f7c-e879-4fd3-a00d-1343d0f05eff`.
 - Deployed frontend Worker version `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`.
-- Verified production OpenAI console analysis and executive artifact generation.
+- Verified production OpenAI Asset Studio analysis and executive artifact generation.
 - Verified workflow steps, event timeline, private schema grants, and cleanup.
 
 ## [1.2.0] - 2026-07-19

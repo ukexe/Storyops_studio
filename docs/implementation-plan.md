@@ -3,15 +3,40 @@
 > **Source document:** `docs/research.md`
 > **Goal:** Build a competition-grade MVP of StoryOps Studio for the IBM AI Builders Challenge (July 2026, *Reimagine Creative Industries with AI*).
 
+## V2.1 AI Asset Studio release
+
+The v2.1.0 release turns the project console into a multimodal AI Asset Studio
+without discarding the proven creative-production workflow. The release scope
+is intentionally vertical:
+
+1. Remove all retired branding from source, UI, prompts, docs, metadata, and
+   current assets.
+2. Add guided Documentation, Visual, Architecture, Engineering, Product,
+   Business, Marketing, and Analytics generation.
+3. Render Markdown, tables, callouts, code, JSON, Mermaid diagrams, charts, and
+   images as polished UI rather than raw syntax.
+4. Generate original visuals through GPT Image 1.5 and persist them in private
+   project Storage.
+5. Add first-class artifact format, media, integrity, model, prompt, and run
+   lineage.
+6. Make workflow steps reloadable and replay requests explicitly reference
+   their source run/event.
+7. Bound Worker requests, sanitize backend errors, disable sensitive automatic
+   invocation logs, and validate the actual OpenNext release artifact.
+
+Deferred by design: binary image editing/masks, audio/video generation,
+collaborative editing, organizations/RBAC, semantic search, knowledge graphs,
+distributed quotas, and durable background workflow execution.
+
 ## V2 extension
 
 The original MVP plan below remains the release record for v1.2.0. The
-production IP Foundry control-plane extension released in v2.0.0 is specified in
-[ip-foundry-v2-architecture.md](ip-foundry-v2-architecture.md) and tracked at
+production StoryOps Studio control-plane extension released in v2.0.0 is specified in
+[storyops-v2-control-plane-architecture.md](storyops-v2-control-plane-architecture.md) and tracked at
 the top of [tasks.md](tasks.md). Its deployed foundation adds the
-interactive homepage, operating console, conversations, workflow runs and
-steps, reusable artifacts, and append-only workspace timeline. Durable
-execution, embeddings, semantic discovery, Atlas persistence, repository
+interactive homepage, AI Asset Studio foundation, conversations, workflow runs
+and steps, reusable artifacts, and application append-only workspace timeline. Durable
+execution, embeddings, semantic discovery, Knowledge map persistence, repository
 generation, and impact forecasting remain dependency-ordered roadmap work.
 
 ---
@@ -94,7 +119,7 @@ storyops-studio/
 │   │   ├── tasks/TaskCard.tsx
 │   │   └── shared/
 │   │       ├── Header.tsx
-│   │       └── WatsonxStatusBadge.tsx  # shown on dashboard
+│   │       └── ProviderStatusBadge.tsx  # shown on dashboard
 │   ├── lib/
 │   │   ├── api.ts                      # typed fetch wrapper (injects auth header)
 │   │   └── supabase/                    # browser, server, and Proxy clients
@@ -331,7 +356,7 @@ AGENT_MAP: dict[str, type[AgentBase]] = {
 
 ### Dashboard (`/dashboard`)
 - Project cards: name, description, item count, last-updated
-- `WatsonxStatusBadge` — calls `GET /health`; shows green "Connected" or amber "Watsonx unavailable"
+- `ProviderStatusBadge` — calls `GET /health`; shows green "Connected" or amber "Watsonx unavailable"
 - "New Project" modal; "Seed Demo" button calls `POST /demo/seed` and navigates to the new project
 
 ### Pipeline View (`/projects/[id]`)
@@ -443,7 +468,7 @@ The demo data in `backend/demo/` must be compelling:
 - Pipeline kanban renders 7 columns with items from the backend
 - "Add Item" works for both text and file types
 - "Seed Demo" button on dashboard creates and navigates to a fully-analyzed project
-- `WatsonxStatusBadge` shows live watsonx connectivity
+- `ProviderStatusBadge` shows live watsonx connectivity
 
 **Todo List:**
 - [x] Create `frontend/` with `npx create-next-app` (TypeScript, App Router, Tailwind, ESLint)
@@ -451,7 +476,7 @@ The demo data in `backend/demo/` must be compelling:
 - [x] Implement environment-specific Supabase clients and the typed `lib/api.ts` fetch wrapper
 - [x] Define `types/index.ts`: `Project`, `Item`, `Analysis`, `Task`, `Recommendation`, and shared enums/constants
 - [x] Build login, registration, email confirmation, and protected-route flows with Supabase Auth
-- [x] Build `Dashboard` page: project cards, "New Project" dialog, "Seed Demo" button, and `WatsonxStatusBadge`
+- [x] Build `Dashboard` page: project cards, "New Project" dialog, "Seed Demo" button, and `ProviderStatusBadge`
 - [x] Build `Header` shared component with user identity, navigation, and sign-out
 - [x] Build `PipelineBoard`: renders 7 columns from `PIPELINE_STAGES` constant
 - [x] Build `StageColumn` + `ItemCard` (title, type badge, analysis indicator)

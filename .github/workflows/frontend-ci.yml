@@ -52,5 +52,11 @@ jobs:
       - name: Type-check
         run: npm run typecheck
 
-      - name: Build
-        run: npm run build
+      - name: Check Cloudflare binding types
+        run: npm run cf-typecheck
+
+      - name: Build OpenNext Worker
+        run: npm run build:worker
+
+      - name: Validate frontend Worker bundle
+        run: npm run dry-run

@@ -9,7 +9,7 @@ import type { WatsonxStatus } from "@/types"
 
 type BadgeState = WatsonxStatus | "checking" | "fallback" | "openai"
 
-export function WatsonxStatusBadge() {
+export function ProviderStatusBadge() {
   const [state, setState] = useState<BadgeState>("checking")
 
   const checkHealth = useCallback(async (signal?: AbortSignal) => {
@@ -43,7 +43,10 @@ export function WatsonxStatusBadge() {
 
   if (state === "connected") {
     return (
-      <Badge variant="outline" className="gap-1.5 text-emerald-700">
+      <Badge
+        variant="outline"
+        className="gap-1.5 text-emerald-700 dark:text-emerald-300"
+      >
         <CircleCheck className="size-3.5" />
         watsonx connected
       </Badge>
@@ -54,11 +57,11 @@ export function WatsonxStatusBadge() {
     return (
       <Badge
         variant="outline"
-        className="gap-1.5 text-emerald-700"
-        title="OpenAI is the active production analysis provider."
+        className="gap-1.5 text-emerald-700 dark:text-emerald-300"
+        title="OpenAI is configured as the production analysis provider."
       >
         <CircleCheck className="size-3.5" />
-        OpenAI active
+        OpenAI configured
       </Badge>
     )
   }
@@ -67,7 +70,7 @@ export function WatsonxStatusBadge() {
     return (
       <Badge
         variant="outline"
-        className="gap-1.5 text-amber-700"
+        className="gap-1.5 text-amber-700 dark:text-amber-300"
         title="Deterministic agents are active because no hosted model provider is configured."
       >
         <CircleCheck className="size-3.5" />
@@ -94,7 +97,10 @@ export function WatsonxStatusBadge() {
       }}
       aria-label="Retry AI provider connectivity check"
     >
-      <Badge variant="outline" className="gap-1.5 text-amber-700">
+      <Badge
+        variant="outline"
+        className="gap-1.5 text-amber-700 dark:text-amber-300"
+      >
         <CircleAlert className="size-3.5" />
         AI provider unavailable
       </Badge>

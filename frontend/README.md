@@ -14,8 +14,9 @@ Cloudflare validation and deployment:
 
 ```bash
 npm run cf-typegen
-npx opennextjs-cloudflare build
-npx wrangler deploy --dry-run
+npm run cf-typecheck
+npm run build:worker
+npm run dry-run
 npm run deploy
 ```
 
@@ -24,8 +25,11 @@ Release checks:
 ```bash
 npm audit --audit-level=moderate
 npm run lint
+npm test
 npm run typecheck
-npm run build
+npm run cf-typecheck
+npm run build:worker
+npm run dry-run
 ```
 
 See the [repository README](../README.md) for full setup, architecture,

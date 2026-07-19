@@ -2,6 +2,7 @@
 
 import { AlertCircle, Bot, RefreshCw, WandSparkles } from "lucide-react"
 
+import { RichContent } from "@/components/ai/RichContent"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -39,11 +40,13 @@ function metricValue(value: unknown): string {
   if (value == null) {
     return "Not set"
   }
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return "Structured value"
+  if (Array.isArray(value)) {
+    return `${value.length} values`
   }
+  if (typeof value === "object") {
+    return `${Object.keys(value).length} fields`
+  }
+  return "Structured value"
 }
 
 interface AnalysisPanelProps {
@@ -131,9 +134,7 @@ export function AnalysisPanel({
               <h2 id="analysis-summary" className="text-sm font-semibold">
                 Summary
               </h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {analysis.summary}
-              </p>
+              <RichContent content={analysis.summary} compact />
             </section>
 
             <section aria-labelledby="analysis-metrics">
@@ -187,9 +188,11 @@ export function AnalysisPanel({
                           {recommendation.priority} priority
                         </Badge>
                       </div>
-                      <p className="mt-2 break-words text-sm leading-6 text-muted-foreground">
-                        {recommendation.detail}
-                      </p>
+                      <RichContent
+                        content={recommendation.detail}
+                        compact
+                        className="mt-2"
+                      />
                     </li>
                   ))}
                 </ul>

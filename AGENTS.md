@@ -9,18 +9,18 @@ This file provides guidance to agents when working with code in this repository.
 **Status:** StoryOps Studio is live end to end. The Next.js frontend runs at
 `https://storyops.ukexe06.workers.dev`, the production REST adapter runs at
 `https://storyops-api.ukexe06.workers.dev`, and the Supabase schema, Auth,
-private Storage bucket, dashboard, pipeline, analyses, tasks, AI console,
+private Storage bucket, dashboard, pipeline, analyses, tasks, AI Asset Studio,
 artifacts, workflow traces, and event timeline are verified.
 The live adapter uses OpenAI with explicit model IDs and deterministic
 edge-agent fallback. The canonical FastAPI service contains the full Granite
 integration for future IBM credentials.
 
-**V2 production release:** StoryOps remains the first creative vertical while IP
-Foundry adds the reusable intelligence control plane. The release contains an
-interactive product homepage, project AI operating console, durable
+**V2 production release:** StoryOps Studio now includes a reusable intelligence
+control plane. The release contains an
+interactive product homepage, project AI Asset Studio, durable
 conversations/messages, workflow runs/steps, reusable artifacts, and an
 append-only workspace event timeline. Production runs migrations through
-`7e34a290f9de` and both v2.0.0 Workers. Roadmap features must never be presented
+`73ff11ca1f26` and both v2.1.0 Workers. Roadmap features must never be presented
 as live behavior.
 
 ## Planned Stack
@@ -109,6 +109,6 @@ Six conceptual agents, each triggered by pipeline events:
 - Replay creates a new correlated run; it never edits historical events
 - Label capabilities honestly as Live, V2 foundation, or Roadmap
 - Keep MVP scope tight: 2–3 agents + manual data ingestion; watsonx Orchestrate is stretch
-- Read `docs/ip-foundry-v2-architecture.md` before extending the control plane,
-  timeline, artifacts, semantic intelligence, Atlas, or repository generation
+- Read `docs/storyops-v2-control-plane-architecture.md` before extending the control plane,
+  timeline, artifacts, semantic intelligence, Knowledge map, or repository generation
 - Reference `docs/research.md` for full scoring rationale, winning patterns, and idea database

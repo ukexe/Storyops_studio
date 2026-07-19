@@ -1,4 +1,4 @@
-"""add IP Foundry control plane
+"""add StoryOps intelligence control plane
 
 Revision ID: 4e0683f5a3ed
 Revises: b91f4d8a2c10

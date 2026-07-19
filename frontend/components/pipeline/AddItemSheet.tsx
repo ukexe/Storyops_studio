@@ -65,6 +65,10 @@ export function AddItemSheet({
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [file, setFile] = useState<File | null>(null)
+  const [sceneDurations, setSceneDurations] = useState("")
+  const [views, setViews] = useState("")
+  const [retention, setRetention] = useState("")
+  const [ctr, setCtr] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -85,27 +89,56 @@ export function AddItemSheet({
         setError("Asset images must be 10 MB or smaller.")
         return
       }
-    } else if (!content.trim()) {
+    } else if (!["edit", "metric"].includes(type) && !content.trim()) {
       setError("Add content or notes for this item.")
       return
     }
 
     let metadata: Record<string, unknown> =
       type === "script" ? { content_type: "youtube" } : {}
-    if (type === "edit" || type === "metric") {
-      try {
-        const parsed = JSON.parse(content)
-        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-          throw new Error("Metadata must be a JSON object.")
-        }
-        metadata = parsed as Record<string, unknown>
-      } catch (caught) {
-        setError(
-          caught instanceof Error
-            ? caught.message
-            : "Metadata must be valid JSON.",
-        )
+    if (type === "edit") {
+      const durations = sceneDurations
+        .split(",")
+        .map((value) => Number(value.trim()))
+        .filter((value) => Number.isFinite(value) && value > 0)
+      if (!durations.length) {
+        setError("Add at least one positive scene duration in seconds.")
         return
+      }
+      let cursor = 0
+      metadata = {
+        scenes: durations.map((duration) => {
+          const start = cursor
+          cursor += Math.round(duration * 1_000)
+          return {
+            start_ms: start,
+            end_ms: cursor,
+            type: "scene",
+          }
+        }),
+      }
+    }
+    if (type === "metric") {
+      const parsedViews = Number(views)
+      const parsedRetention = Number(retention)
+      const parsedCtr = Number(ctr)
+      if (
+        !Number.isFinite(parsedViews) ||
+        parsedViews < 0 ||
+        !Number.isFinite(parsedRetention) ||
+        parsedRetention < 0 ||
+        parsedRetention > 100 ||
+        !Number.isFinite(parsedCtr) ||
+        parsedCtr < 0 ||
+        parsedCtr > 100
+      ) {
+        setError("Add valid views and percentage values from 0 to 100.")
+        return
+      }
+      metadata = {
+        views: Math.round(parsedViews),
+        avg_retention_pct: parsedRetention,
+        ctr_pct: parsedCtr,
       }
     }
 
@@ -238,24 +271,77 @@ export function AddItemSheet({
                   disabled={isSubmitting}
                 />
               </div>
+            ) : type === "edit" ? (
+              <div className="space-y-2">
+                <Label htmlFor="scene-durations">Scene durations</Label>
+                <Input
+                  id="scene-durations"
+                  value={sceneDurations}
+                  onChange={(event) => setSceneDurations(event.target.value)}
+                  placeholder="4.5, 3.2, 8, 5.5"
+                  required
+                  disabled={isSubmitting}
+                />
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Enter comma-separated durations in seconds. StoryOps builds the
+                  timeline and evaluates pacing automatically.
+                </p>
+              </div>
+            ) : type === "metric" ? (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="metric-views">Views</Label>
+                  <Input
+                    id="metric-views"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={views}
+                    onChange={(event) => setViews(event.target.value)}
+                    placeholder="1000"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="metric-retention">Retention %</Label>
+                  <Input
+                    id="metric-retention"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={retention}
+                    onChange={(event) => setRetention(event.target.value)}
+                    placeholder="52"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="metric-ctr">CTR %</Label>
+                  <Input
+                    id="metric-ctr"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={ctr}
+                    onChange={(event) => setCtr(event.target.value)}
+                    placeholder="5.4"
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="item-content">
-                  {type === "edit" || type === "metric"
-                    ? "Metadata JSON"
-                    : "Content"}
-                </Label>
+                <Label htmlFor="item-content">Content</Label>
                 <Textarea
                   id="item-content"
                   value={content}
                   onChange={(event) => setContent(event.target.value)}
-                  placeholder={
-                    type === "edit"
-                      ? '{"scenes":[{"start_ms":0,"end_ms":4500,"type":"talking_head"}]}'
-                      : type === "metric"
-                        ? '{"views":1000,"avg_retention_pct":52,"ctr_pct":5.4}'
-                        : "Paste the brief, script, or notes here"
-                  }
+                  placeholder="Paste the brief, script, or notes here"
                   rows={12}
                   required
                   disabled={isSubmitting}

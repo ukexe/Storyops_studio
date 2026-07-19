@@ -88,6 +88,8 @@ export interface HealthResponse {
   analysis_mode?: "watsonx" | "openai" | "edge-rules"
   fallback_mode?: "edge-rules"
   model_id?: string | null
+  image_generation?: "configured" | "unavailable"
+  image_model_id?: string | null
 }
 
 export interface DemoSeedResponse {
@@ -145,6 +147,13 @@ export type WorkflowStepStatus =
   | "failed"
   | "skipped"
 export type ArtifactStatus = "draft" | "ready" | "approved" | "archived"
+export type ArtifactFormat =
+  | "markdown"
+  | "mermaid"
+  | "code"
+  | "json"
+  | "image"
+  | "text"
 export type WorkspaceEventSource =
   | "user"
   | "agent"
@@ -186,11 +195,14 @@ export interface WorkflowRun {
   id: string
   project_id: string
   conversation_id: string | null
+  replayed_from_run_id: string | null
   run_type: string
   objective: string
   status: WorkflowRunStatus
   progress: number
   current_agent: string | null
+  model_id: string | null
+  prompt_version: string | null
   confidence: number | null
   error: string | null
   started_at: string | null
@@ -219,9 +231,16 @@ export interface Artifact {
   project_id: string
   conversation_id: string | null
   source_message_id: string | null
+  run_id: string | null
   type: string
   title: string
   content: string
+  format: ArtifactFormat
+  mime_type: string | null
+  storage_path: string | null
+  content_url: string | null
+  model_id: string | null
+  content_sha256: string | null
   metadata: Record<string, unknown>
   status: ArtifactStatus
   version: number
@@ -264,6 +283,8 @@ export interface UIIntent {
 export interface ConsoleTurnInput {
   message: string
   conversation_id?: string | null
+  replay_from_run_id?: string | null
+  replay_from_event_id?: string | null
   context?: Record<string, unknown>
 }
 

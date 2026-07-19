@@ -2,15 +2,13 @@ import { createClient, type SupabaseClient, type User } from "@supabase/supabase
 import {
   appendWorkspaceEvent,
   executeConsoleTurn,
+  hydrateArtifact,
 } from "./control-plane"
 import { DEMO_THUMBNAIL_BASE64 } from "./demo-thumbnail"
 
-export interface WorkerEnv {
-  SUPABASE_URL: string
+export interface WorkerEnv extends CloudflareEnv {
   SUPABASE_SECRET_KEY: string
-  CORS_ORIGINS: string
   OPENAI_API_KEY?: string
-  OPENAI_MODEL: string
 }
 
 type Db = SupabaseClient
@@ -67,19 +65,24 @@ const ITEM_TYPES = [
   "feedback",
   "metric",
 ] as const
-const DEMO_VERSION = "2026-v1"
+const DEMO_VERSION = "2026-v2"
 const DEMO_NAME = "YouTube Series — AI Explained"
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 const MAX_OPENAI_TEXT_CHARS = 40_000
 const MAX_OPENAI_METADATA_CHARS = 20_000
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 const OPENAI_TIMEOUT_MS = 60_000
+const MAX_JSON_BODY_BYTES = 320 * 1024
+const MAX_MULTIPART_BODY_BYTES = MAX_UPLOAD_BYTES + 512 * 1024
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const rateEvents = new Map<string, number[]>()
 
 class ApiProblem extends Error {
   constructor(
     readonly status: number,
     message: string,
+    readonly retryAfter?: number,
   ) {
     super(message)
   }
@@ -95,7 +98,11 @@ function enforceRateLimit(
     (timestamp) => timestamp > now - windowMilliseconds,
   )
   if (recent.length >= limit) {
-    throw new ApiProblem(429, "Rate limit exceeded. Try again later.")
+    throw new ApiProblem(
+      429,
+      "Rate limit exceeded. Try again later.",
+      Math.ceil(windowMilliseconds / 1_000),
+    )
   }
   recent.push(now)
   rateEvents.set(key, recent)
@@ -126,6 +133,7 @@ function corsHeaders(request: Request, env: WorkerEnv): Headers {
     "Cache-Control": "private, no-store",
     "Content-Type": "application/json; charset=utf-8",
     "Referrer-Policy": "no-referrer",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
     Vary: "Origin",
     "X-Content-Type-Options": "nosniff",
   })
@@ -161,14 +169,79 @@ async function currentUser(request: Request, db: Db): Promise<User> {
 
 async function bodyRecord(request: Request): Promise<JsonRecord> {
   try {
-    const body: unknown = await request.json()
+    const bytes = await readRequestBody(request, MAX_JSON_BODY_BYTES)
+    const body: unknown = JSON.parse(new TextDecoder().decode(bytes))
     if (!body || typeof body !== "object" || Array.isArray(body)) {
       throw new Error()
     }
     return body as JsonRecord
-  } catch {
+  } catch (caught) {
+    if (caught instanceof ApiProblem) throw caught
     throw new ApiProblem(422, "Request body must be a JSON object")
   }
+}
+
+function assertDeclaredBodySize(request: Request, maximum: number): void {
+  const value = request.headers.get("Content-Length")
+  if (!value) return
+  const size = Number(value)
+  if (Number.isFinite(size) && size > maximum) {
+    throw new ApiProblem(413, `Request body exceeds the ${maximum} byte limit`)
+  }
+}
+
+async function readRequestBody(request: Request, maximum: number) {
+  assertDeclaredBodySize(request, maximum)
+  if (!request.body) return new Uint8Array()
+  const reader = request.body.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      size += value.byteLength
+      if (size > maximum) {
+        await reader.cancel()
+        throw new ApiProblem(413, `Request body exceeds the ${maximum} byte limit`)
+      }
+      chunks.push(value)
+    }
+  } finally {
+    reader.releaseLock()
+  }
+  const result = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) {
+    result.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return result
+}
+
+function dataProblem(error: unknown): ApiProblem {
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String(error.code).slice(0, 80)
+      : "unknown"
+  console.error(JSON.stringify({ event: "data_operation_failed", code }))
+  return new ApiProblem(500, "A data operation failed. Please try again.")
+}
+
+function eventValue(field: string, value: unknown): unknown {
+  if (field === "content" && typeof value === "string") {
+    return { characters: value.length }
+  }
+  if (
+    field === "metadata" &&
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+  ) {
+    const keys = Object.keys(value)
+    return { keys: keys.slice(0, 50), field_count: keys.length }
+  }
+  return value
 }
 
 function boundedLimit(url: URL, fallback: number, maximum: number): number {
@@ -190,7 +263,20 @@ function requiredString(
   if (typeof value !== "string" || !value.trim()) {
     throw new ApiProblem(422, `${key} is required`)
   }
-  return value.trim().slice(0, maxLength)
+  const normalized = value.trim()
+  if (normalized.length > maxLength) {
+    throw new ApiProblem(422, `${key} must be ${maxLength} characters or fewer`)
+  }
+  return normalized
+}
+
+function optionalUuid(record: JsonRecord, key: string): string | null {
+  const value = record[key]
+  if (value === null || value === undefined || value === "") return null
+  if (typeof value !== "string" || !UUID_PATTERN.test(value)) {
+    throw new ApiProblem(422, `${key} must be a UUID`)
+  }
+  return value
 }
 
 function optionalHttpUrl(value: unknown): string | null {
@@ -201,6 +287,7 @@ function optionalHttpUrl(value: unknown): string | null {
   try {
     const url = new URL(value)
     if (!["http:", "https:"].includes(url.protocol)) throw new Error()
+    if (url.username || url.password) throw new Error()
     return url.toString()
   } catch {
     throw new ApiProblem(422, "repo_url must be an HTTP(S) URL")
@@ -214,7 +301,7 @@ async function ownedProject(db: Db, projectId: string, userId: string) {
     .eq("id", projectId)
     .eq("owner_id", userId)
     .maybeSingle()
-  if (error) throw new ApiProblem(500, error.message)
+  if (error) throw dataProblem(error)
   if (!data) throw new ApiProblem(404, "Project not found")
   return data
 }
@@ -225,7 +312,7 @@ async function ownedItem(db: Db, itemId: string, userId: string) {
     .select("*")
     .eq("id", itemId)
     .maybeSingle()
-  if (error) throw new ApiProblem(500, error.message)
+  if (error) throw dataProblem(error)
   if (!data) throw new ApiProblem(404, "Item not found")
   await ownedProject(db, String(data.project_id), userId)
   return data
@@ -249,7 +336,7 @@ async function projectResponse(db: Db, project: JsonRecord) {
     .from("items")
     .select("stage")
     .eq("project_id", String(project.id))
-  if (error) throw new ApiProblem(500, error.message)
+  if (error) throw dataProblem(error)
   for (const item of data ?? []) {
     const stage = item.stage as keyof typeof counts
     if (stage in counts) counts[stage] += 1
@@ -260,7 +347,7 @@ async function projectResponse(db: Db, project: JsonRecord) {
 function isStoragePath(value: unknown): value is string {
   return (
     typeof value === "string" &&
-    /^[0-9a-f-]{36}\/[^/]+$/i.test(value) &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/[^/]+$/i.test(value) &&
     !value.includes("..")
   )
 }
@@ -274,7 +361,7 @@ async function itemResponse(db: Db, item: JsonRecord) {
     .order("id", { ascending: false })
     .limit(1)
     .maybeSingle()
-  if (error) throw new ApiProblem(500, error.message)
+  if (error) throw dataProblem(error)
 
   let fileUrl = item.file_url
   if (isStoragePath(fileUrl)) {
@@ -410,7 +497,13 @@ function decodeEventCursor(value: string): { createdAt: string; id: string } {
     if (separator <= 0) throw new Error()
     const createdAt = decoded.slice(0, separator)
     const id = decoded.slice(separator + 1)
-    if (!createdAt || !/^[0-9a-f-]{36}$/i.test(id)) throw new Error()
+    if (
+      !createdAt.endsWith("Z") ||
+      Number.isNaN(Date.parse(createdAt)) ||
+      !UUID_PATTERN.test(id)
+    ) {
+      throw new Error()
+    }
     return { createdAt, id }
   } catch {
     throw new ApiProblem(422, "Invalid event cursor")
@@ -505,7 +598,7 @@ export async function openAIAnalysis(
     content.push({
       type: "input_image",
       image_url: `data:${image.mime};base64,${base64Encode(image.bytes)}`,
-      detail: "low",
+      detail: "high",
     })
   }
 
@@ -908,6 +1001,7 @@ export async function parseItemInput(request: Request) {
   let file: File | null = null
 
   if (contentType.startsWith("multipart/form-data")) {
+    assertDeclaredBodySize(request, MAX_MULTIPART_BODY_BYTES)
     const form = await request.formData()
     const metadataValue = form.get("metadata")
     try {
@@ -977,14 +1071,20 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
     return new Response(null, { status: 204, headers: corsHeaders(request, env) })
   }
   if (path === "/" || path === "/live") {
+    if (request.method !== "GET") {
+      throw new ApiProblem(405, "Method not allowed")
+    }
     return json(request, env, {
       name: "StoryOps Studio Edge API",
       status: "ok",
-      version: "2.0.0",
+      version: "2.1.0",
     })
   }
   if (path === "/health") {
-    const { error } = await db.from("projects").select("id", { head: true, count: "exact" })
+    if (request.method !== "GET") {
+      throw new ApiProblem(405, "Method not allowed")
+    }
+    const { error } = await db.from("projects").select("id").limit(1)
     return json(
       request,
       env,
@@ -996,6 +1096,10 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         analysis_mode: env.OPENAI_API_KEY ? "openai" : "edge-rules",
         fallback_mode: "edge-rules",
         model_id: env.OPENAI_API_KEY ? `openai/${env.OPENAI_MODEL}` : null,
+        image_generation: env.OPENAI_API_KEY ? "configured" : "unavailable",
+        image_model_id: env.OPENAI_API_KEY
+          ? `openai/${env.OPENAI_IMAGE_MODEL}`
+          : null,
       },
       error ? 503 : 200,
     )
@@ -1004,24 +1108,15 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
   const user = await currentUser(request, db)
 
   const consoleTurnMatch = path.match(
-    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/console\/turns$/i,
+    /^\/api\/v1\/projects\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/console\/turns$/i,
   )
   if (consoleTurnMatch && request.method === "POST") {
     enforceRateLimit(`console:${user.id}`, 20, 60_000)
     const project = await ownedProject(db, consoleTurnMatch[1], user.id)
     const body = await bodyRecord(request)
-    const conversationId =
-      body.conversation_id === null || body.conversation_id === undefined
-        ? null
-        : requiredString(body, "conversation_id", 36)
-    if (
-      conversationId &&
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        conversationId,
-      )
-    ) {
-      throw new ApiProblem(422, "conversation_id must be a UUID")
-    }
+    const conversationId = optionalUuid(body, "conversation_id")
+    const replayFromRunId = optionalUuid(body, "replay_from_run_id")
+    const replayFromEventId = optionalUuid(body, "replay_from_event_id")
     if (
       "context" in body &&
       (!body.context ||
@@ -1036,22 +1131,37 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       !Array.isArray(body.context)
         ? (body.context as JsonRecord)
         : {}
-    return json(
-      request,
-      env,
-      await executeConsoleTurn(db, env, {
+    let result: unknown
+    try {
+      result = await executeConsoleTurn(db, env, {
         project,
         userId: user.id,
         message: requiredString(body, "message", 20_000),
         conversationId,
+        replayFromRunId,
+        replayFromEventId,
         context,
-      }),
+      })
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : ""
+      if (message.includes("not found in this workspace")) {
+        throw new ApiProblem(404, message)
+      }
+      if (message.includes("context exceeds")) {
+        throw new ApiProblem(422, message)
+      }
+      throw caught
+    }
+    return json(
+      request,
+      env,
+      result,
       201,
     )
   }
 
   const conversationsMatch = path.match(
-    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/conversations$/i,
+    /^\/api\/v1\/projects\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/conversations$/i,
   )
   if (conversationsMatch && request.method === "GET") {
     await ownedProject(db, conversationsMatch[1], user.id)
@@ -1062,12 +1172,12 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .eq("owner_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(boundedLimit(url, 20, 100))
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
     return json(request, env, data ?? [])
   }
 
   const messagesMatch = path.match(
-    /^\/api\/v1\/conversations\/([0-9a-f-]{36})\/messages$/i,
+    /^\/api\/v1\/conversations\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/messages$/i,
   )
   if (messagesMatch && request.method === "GET") {
     const { data: conversation, error: conversationError } = await db
@@ -1076,7 +1186,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .eq("id", messagesMatch[1])
       .eq("owner_id", user.id)
       .maybeSingle()
-    if (conversationError) throw new ApiProblem(500, conversationError.message)
+    if (conversationError) throw dataProblem(conversationError)
     if (!conversation) throw new ApiProblem(404, "Conversation not found")
     await ownedProject(db, String(conversation.project_id), user.id)
     const { data, error } = await db
@@ -1085,12 +1195,12 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .eq("conversation_id", messagesMatch[1])
       .order("created_at")
       .limit(boundedLimit(url, 100, 200))
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
     return json(request, env, data ?? [])
   }
 
   const artifactsMatch = path.match(
-    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/artifacts$/i,
+    /^\/api\/v1\/projects\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/artifacts$/i,
   )
   if (artifactsMatch && request.method === "GET") {
     await ownedProject(db, artifactsMatch[1], user.id)
@@ -1100,12 +1210,16 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .eq("project_id", artifactsMatch[1])
       .order("updated_at", { ascending: false })
       .limit(boundedLimit(url, 50, 100))
-    if (error) throw new ApiProblem(500, error.message)
-    return json(request, env, data ?? [])
+    if (error) throw dataProblem(error)
+    return json(
+      request,
+      env,
+      await Promise.all((data ?? []).map((artifact) => hydrateArtifact(db, artifact))),
+    )
   }
 
   const runsMatch = path.match(
-    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/runs$/i,
+    /^\/api\/v1\/projects\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/runs$/i,
   )
   if (runsMatch && request.method === "GET") {
     await ownedProject(db, runsMatch[1], user.id)
@@ -1115,12 +1229,34 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .eq("project_id", runsMatch[1])
       .order("created_at", { ascending: false })
       .limit(boundedLimit(url, 30, 100))
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
+    return json(request, env, data ?? [])
+  }
+
+  const runStepsMatch = path.match(
+    /^\/api\/v1\/runs\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/steps$/i,
+  )
+  if (runStepsMatch && request.method === "GET") {
+    const { data: run, error: runError } = await db
+      .from("workflow_runs")
+      .select("project_id")
+      .eq("id", runStepsMatch[1])
+      .maybeSingle()
+    if (runError) throw dataProblem(runError)
+    if (!run) throw new ApiProblem(404, "Workflow run not found")
+    await ownedProject(db, String(run.project_id), user.id)
+    const { data, error } = await db
+      .from("workflow_steps")
+      .select("*")
+      .eq("run_id", runStepsMatch[1])
+      .order("sequence", { ascending: true })
+      .order("id", { ascending: true })
+    if (error) throw dataProblem(error)
     return json(request, env, data ?? [])
   }
 
   const eventsMatch = path.match(
-    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/events$/i,
+    /^\/api\/v1\/projects\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/events$/i,
   )
   if (eventsMatch && request.method === "GET") {
     await ownedProject(db, eventsMatch[1], user.id)
@@ -1135,12 +1271,12 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
     const cursor = url.searchParams.get("cursor")
     if (cursor) {
       const decoded = decodeEventCursor(cursor)
-      query = query
-        .neq("id", decoded.id)
-        .lte("created_at", decoded.createdAt)
+      query = query.or(
+        `created_at.lt.${decoded.createdAt},and(created_at.eq.${decoded.createdAt},id.lt.${decoded.id})`,
+      )
     }
     const { data, error } = await query
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
     const events = (data ?? []).slice(0, limit)
     return json(request, env, {
       events,
@@ -1157,7 +1293,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .select("*")
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false })
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
     return json(
       request,
       env,
@@ -1180,7 +1316,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       })
       .select()
       .single()
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
     await appendWorkspaceEvent(db, {
       projectId: String(data.id),
       actorId: user.id,
@@ -1198,7 +1334,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
     return json(request, env, await projectResponse(db, data), 201)
   }
 
-  const projectMatch = path.match(/^\/api\/v1\/projects\/([0-9a-f-]{36})$/i)
+  const projectMatch = path.match(/^\/api\/v1\/projects\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i)
   if (projectMatch) {
     const project = await ownedProject(db, projectMatch[1], user.id)
     if (request.method === "GET") {
@@ -1225,7 +1361,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .eq("id", projectMatch[1])
         .select()
         .single()
-      if (error) throw new ApiProblem(500, error.message)
+      if (error) throw dataProblem(error)
       await appendWorkspaceEvent(db, {
         projectId: projectMatch[1],
         actorId: user.id,
@@ -1246,22 +1382,29 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       return json(request, env, await projectResponse(db, data))
     }
     if (request.method === "DELETE") {
-      const { data: items } = await db
-        .from("items")
-        .select("file_url")
-        .eq("project_id", projectMatch[1])
-      const paths = (items ?? [])
-        .map((item) => item.file_url)
-        .filter(isStoragePath)
+      const [{ data: items }, { data: artifacts }] = await Promise.all([
+        db
+          .from("items")
+          .select("file_url")
+          .eq("project_id", projectMatch[1]),
+        db
+          .from("artifacts")
+          .select("storage_path")
+          .eq("project_id", projectMatch[1]),
+      ])
+      const paths = [
+        ...(items ?? []).map((item) => item.file_url),
+        ...(artifacts ?? []).map((artifact) => artifact.storage_path),
+      ].filter(isStoragePath)
       if (paths.length) await db.storage.from("assets").remove(paths)
       const { error } = await db.from("projects").delete().eq("id", projectMatch[1])
-      if (error) throw new ApiProblem(500, error.message)
+      if (error) throw dataProblem(error)
       return new Response(null, { status: 204, headers: corsHeaders(request, env) })
     }
   }
 
   const projectItemsMatch = path.match(
-    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/items$/i,
+    /^\/api\/v1\/projects\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/items$/i,
   )
   if (projectItemsMatch) {
     await ownedProject(db, projectItemsMatch[1], user.id)
@@ -1271,7 +1414,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .select("*")
         .eq("project_id", projectItemsMatch[1])
         .order("created_at")
-      if (error) throw new ApiProblem(500, error.message)
+      if (error) throw dataProblem(error)
       const grouped = Object.fromEntries(STAGES.map((stage) => [stage, []])) as Record<
         string,
         unknown[]
@@ -1295,7 +1438,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
           contentType: trusted.mime,
           upsert: false,
         })
-        if (error) throw new ApiProblem(500, error.message)
+        if (error) throw dataProblem(error)
       }
       const { data, error } = await db
         .from("items")
@@ -1312,7 +1455,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .single()
       if (error) {
         if (filePath) await db.storage.from("assets").remove([filePath])
-        throw new ApiProblem(500, error.message)
+        throw dataProblem(error)
       }
       await appendWorkspaceEvent(db, {
         projectId: projectItemsMatch[1],
@@ -1334,7 +1477,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
     }
   }
 
-  const itemMatch = path.match(/^\/api\/v1\/items\/([0-9a-f-]{36})$/i)
+  const itemMatch = path.match(/^\/api\/v1\/items\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i)
   if (itemMatch) {
     const item = await ownedItem(db, itemMatch[1], user.id)
     if (request.method === "GET") {
@@ -1376,7 +1519,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .eq("id", itemMatch[1])
         .select()
         .single()
-      if (error) throw new ApiProblem(500, error.message)
+      if (error) throw dataProblem(error)
       await appendWorkspaceEvent(db, {
         projectId: String(item.project_id),
         actorId: user.id,
@@ -1387,9 +1530,17 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         title: `Updated ${String(data.title)}`,
         payload: {
           before: Object.fromEntries(
-            Object.keys(updates).map((key) => [key, item[key]]),
+            Object.keys(updates).map((key) => [
+              key,
+              eventValue(key, item[key]),
+            ]),
           ),
-          after: updates,
+          after: Object.fromEntries(
+            Object.entries(updates).map(([key, value]) => [
+              key,
+              eventValue(key, value),
+            ]),
+          ),
           changed_fields: Object.keys(updates),
         },
         isReversible: Object.keys(updates).length > 0,
@@ -1416,13 +1567,13 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         await db.storage.from("assets").remove([item.file_url])
       }
       const { error } = await db.from("items").delete().eq("id", itemMatch[1])
-      if (error) throw new ApiProblem(500, error.message)
+      if (error) throw dataProblem(error)
       return new Response(null, { status: 204, headers: corsHeaders(request, env) })
     }
   }
 
   const analysesMatch = path.match(
-    /^\/api\/v1\/items\/([0-9a-f-]{36})\/analyses$/i,
+    /^\/api\/v1\/items\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/analyses$/i,
   )
   if (analysesMatch && request.method === "GET") {
     await ownedItem(db, analysesMatch[1], user.id)
@@ -1432,12 +1583,12 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .eq("item_id", analysesMatch[1])
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
     return json(request, env, data ?? [])
   }
 
   const analyzeMatch = path.match(
-    /^\/api\/v1\/items\/([0-9a-f-]{36})\/analyze$/i,
+    /^\/api\/v1\/items\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/analyze$/i,
   )
   if (analyzeMatch && request.method === "POST") {
     enforceRateLimit(`analysis:${user.id}`, 10, 60_000)
@@ -1466,7 +1617,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
   }
 
   const tasksMatch = path.match(
-    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/tasks$/i,
+    /^\/api\/v1\/projects\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/tasks$/i,
   )
   if (tasksMatch && request.method === "GET") {
     await ownedProject(db, tasksMatch[1], user.id)
@@ -1478,7 +1629,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
     const status = url.searchParams.get("status")
     if (status) query = query.eq("status", status)
     const { data, error } = await query
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
     return json(
       request,
       env,
@@ -1486,14 +1637,14 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
     )
   }
 
-  const taskMatch = path.match(/^\/api\/v1\/tasks\/([0-9a-f-]{36})$/i)
+  const taskMatch = path.match(/^\/api\/v1\/tasks\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i)
   if (taskMatch) {
     const { data: task, error } = await db
       .from("tasks")
       .select("*")
       .eq("id", taskMatch[1])
       .maybeSingle()
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
     if (!task) throw new ApiProblem(404, "Task not found")
     await ownedProject(db, String(task.project_id), user.id)
     if (request.method === "PATCH") {
@@ -1526,7 +1677,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .eq("id", taskMatch[1])
         .select()
         .single()
-      if (updateError) throw new ApiProblem(500, updateError.message)
+      if (updateError) throw dataProblem(updateError)
       await appendWorkspaceEvent(db, {
         projectId: String(task.project_id),
         actorId: user.id,
@@ -1568,7 +1719,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .from("tasks")
         .delete()
         .eq("id", taskMatch[1])
-      if (deleteError) throw new ApiProblem(500, deleteError.message)
+      if (deleteError) throw dataProblem(deleteError)
       return new Response(null, { status: 204, headers: corsHeaders(request, env) })
     }
   }
@@ -1593,7 +1744,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       })
       .select()
       .single()
-    if (error) throw new ApiProblem(500, error.message)
+    if (error) throw dataProblem(error)
 
     try {
       const { data: items, error: itemError } = await db
@@ -1636,7 +1787,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
           },
         ])
         .select()
-      if (itemError) throw new ApiProblem(500, itemError.message)
+      if (itemError) throw dataProblem(itemError)
       await Promise.all(
         (items ?? [])
           .filter((value) => ["brief", "script", "asset"].includes(value.type))
@@ -1673,7 +1824,16 @@ export default {
       return await route(request, env)
     } catch (caught) {
       if (caught instanceof ApiProblem) {
-        return json(request, env, { detail: caught.message }, caught.status)
+        const response = json(
+          request,
+          env,
+          { detail: caught.message },
+          caught.status,
+        )
+        if (caught.retryAfter) {
+          response.headers.set("Retry-After", String(caught.retryAfter))
+        }
+        return response
       }
       console.error("Unhandled StoryOps API error", caught)
       return json(request, env, { detail: "Internal server error" }, 500)

@@ -18,7 +18,7 @@ Confirm the deployed environment:
 4. Confirm the frontend deployment URL and `/auth/confirm` are allowed Supabase
    Auth redirect URLs.
 5. Confirm the Supabase `assets` bucket exists and is private.
-6. Confirm Alembic reports revision `b91f4d8a2c10`.
+6. Confirm Alembic reports revision `73ff11ca1f26`.
 
 For local testing, use `http://localhost:3000` and
 `http://localhost:8000`. The deployed frontend is
@@ -41,7 +41,7 @@ Expected:
 
 - The dashboard loads without a redirect loop.
 - The user email appears in the header.
-- The status badge reports **OpenAI active**.
+- The status badge reports **OpenAI configured**.
 
 ### 2. Seed the judging project
 
@@ -138,9 +138,9 @@ Expected:
 - Only that card's controls are disabled while saving.
 - Refreshing the page preserves the new status.
 
-### 9. Operate the workspace through AI
+### 9. Create project assets with AI
 
-Return to the pipeline and select **AI console**.
+Return to the pipeline and select **AI Asset Studio**.
 
 Use:
 
@@ -153,13 +153,28 @@ Show:
 - The persisted conversation
 - Current objective and completed run
 - Context, evidence, and artifact-writer tool receipts
-- Impact Analyst delegation
+- Impact Analyst specialist route
 - Confidence and explicit `openai/<model>` audit ID
-- Reusable executive report in the artifact shelf
+- Professionally rendered executive report in the asset shelf
 
 Explain that the chat is not a detached chatbot: one request creates a
 conversation message, workflow run, transparent steps, artifact, and correlated
 timeline events.
+
+Then generate:
+
+```text
+Generate a Mermaid system architecture diagram.
+```
+
+Verify rendered output and SVG download. Next generate:
+
+```text
+Generate a launch campaign graphic.
+```
+
+Verify the private signed image preview and explicit
+`openai/gpt-image-1.5` audit ID.
 
 ### 10. Replay the workflow evidence
 
@@ -183,7 +198,7 @@ Summarize the loop:
 
 ```text
 Creative input → specialized analysis → structured recommendation
-→ team task → operating-console synthesis → reusable artifact
+→ team task → AI Asset Studio → reusable project asset
 → explainable timeline → future performance learning
 ```
 
@@ -215,6 +230,10 @@ To demonstrate authoring rather than seeding:
 - [x] Task status changes persist after reload.
 - [x] Production console analysis uses the configured OpenAI model.
 - [x] Executive report generation persists an artifact and three workflow steps.
+- [x] Mermaid diagrams render and export as SVG.
+- [x] Generated images persist in private Storage with signed previews.
+- [x] Workflow steps reload from the persisted run.
+- [x] Replay runs retain their source run and event lineage.
 - [x] Workspace timeline records correlated project, item, console, and artifact events.
 - [ ] Mobile layouts do not overflow.
 - [ ] Keyboard navigation reaches all demo controls.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import uuid
@@ -27,6 +28,7 @@ from app.storage import (
     delete_asset_url,
     detect_image_content_type,
     is_asset_path,
+    is_asset_path_for_project,
     upload_asset,
 )
 
@@ -36,6 +38,20 @@ logger = logging.getLogger(__name__)
 DB = Annotated[AsyncSession, Depends(get_db)]
 CurrentUser = Annotated[dict, Depends(get_current_user)]
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+
+
+def _event_value(field: str, value: object) -> object:
+    if field == "content" and isinstance(value, str):
+        return {
+            "characters": len(value),
+            "sha256": hashlib.sha256(value.encode()).hexdigest(),
+        }
+    if field == "metadata" and isinstance(value, dict):
+        return {
+            "keys": sorted(str(key) for key in value)[:50],
+            "field_count": len(value),
+        }
+    return value
 
 
 async def _get_project_for_user(
@@ -77,14 +93,18 @@ async def _item_response(
 ) -> ItemResponse:
     response = ItemResponse.model_validate(item)
     if item.file_url and is_asset_path(item.file_url):
-        try:
-            response.file_url = await asyncio.to_thread(
-                create_signed_asset_url,
-                item.file_url,
-            )
-        except Exception:  # noqa: BLE001
-            logger.exception("Failed to sign asset URL for item %s", item.id)
+        if not is_asset_path_for_project(item.file_url, item.project_id):
+            logger.error("Rejected cross-project asset path for item %s", item.id)
             response.file_url = None
+        else:
+            try:
+                response.file_url = await asyncio.to_thread(
+                    create_signed_asset_url,
+                    item.file_url,
+                )
+            except Exception:  # noqa: BLE001
+                logger.exception("Failed to sign asset URL for item %s", item.id)
+                response.file_url = None
     if latest:
         from app.schemas.analysis import AnalysisResponse
 
@@ -359,8 +379,14 @@ async def update_item(
         object_id=item.id,
         title=f"Updated {item.title}",
         payload={
-            "before": previous,
-            "after": update_data,
+            "before": {
+                field: _event_value(field, value)
+                for field, value in previous.items()
+            },
+            "after": {
+                field: _event_value(field, value)
+                for field, value in update_data.items()
+            },
             "changed_fields": list(update_data),
         },
         is_reversible=bool(update_data),

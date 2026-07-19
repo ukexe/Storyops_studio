@@ -49,9 +49,9 @@ async def lifespan(app: FastAPI):
 
     try:
         watsonx_client = get_client()
-        await watsonx_client.check_connection()
+        await asyncio.wait_for(watsonx_client.check_connection(), timeout=15)
         logger.info("watsonx.ai connection OK")
-    except WatsonxError as exc:
+    except (TimeoutError, WatsonxError) as exc:
         # AI connectivity is reported by /health but does not prevent offline development.
         logger.warning("watsonx.ai connection failed on startup: %s", exc)
 
@@ -64,7 +64,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StoryOps Studio API",
     description="Agentic AI creative operations platform — IBM AI Builders Challenge 2026",
-    version="2.0.0",
+    version="2.1.0",
     lifespan=lifespan,
     docs_url=None if settings.ENVIRONMENT == "production" else "/docs",
     redoc_url=None if settings.ENVIRONMENT == "production" else "/redoc",

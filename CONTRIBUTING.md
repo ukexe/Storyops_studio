@@ -1,13 +1,13 @@
 # Contributing to StoryOps Studio
 
-Thank you for helping improve StoryOps Studio and the IP Foundry control plane.
+Thank you for helping improve StoryOps Studio and the StoryOps intelligence control plane.
 
 ## Before you begin
 
 - Read [`AGENTS.md`](AGENTS.md) for load-bearing project constraints.
 - Read [`docs/architecture.md`](docs/architecture.md) for the current runtime.
 - Read
-  [`docs/ip-foundry-v2-architecture.md`](docs/ip-foundry-v2-architecture.md)
+  [`docs/storyops-v2-control-plane-architecture.md`](docs/storyops-v2-control-plane-architecture.md)
   before changing conversations, runs, artifacts, events, AI tools, or future
   knowledge-graph features.
 - Open an issue before starting a large architecture, schema, provider, or UX
@@ -81,6 +81,9 @@ cd frontend
 npm run lint
 npm test
 npm run typecheck
+npm run cf-typecheck
+npm run build:worker
+npm run dry-run
 ```
 
 ### Cloudflare Worker
@@ -98,6 +101,7 @@ Validate:
 cd backend/cloudflare
 npm test
 npm run typecheck
+npm run cf-typecheck
 npm run dry-run
 ```
 

@@ -58,7 +58,9 @@ export default function LoginPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Welcome back</CardTitle>
+        <CardTitle>
+          <h1>Welcome back</h1>
+        </CardTitle>
         <CardDescription>
           Sign in to manage your creative production pipeline.
         </CardDescription>

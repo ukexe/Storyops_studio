@@ -8,7 +8,7 @@ import { useParams, useRouter } from "next/navigation"
 import { AddItemSheet } from "@/components/pipeline/AddItemSheet"
 import { PipelineBoard } from "@/components/pipeline/PipelineBoard"
 import { Header } from "@/components/shared/Header"
-import { WatsonxStatusBadge } from "@/components/shared/WatsonxStatusBadge"
+import { ProviderStatusBadge } from "@/components/shared/ProviderStatusBadge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -129,7 +129,7 @@ export default function ProjectPipelinePage() {
           </span>
         }
       >
-        <WatsonxStatusBadge />
+        <ProviderStatusBadge />
       </Header>
 
       <main className="mx-auto max-w-[1600px] px-4 py-7 sm:px-6">
@@ -182,7 +182,7 @@ export default function ProjectPipelinePage() {
                 <Button asChild size="sm">
                   <Link href={`/projects/${project.id}/console`}>
                     <Bot />
-                    AI console
+                    AI Asset Studio
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">

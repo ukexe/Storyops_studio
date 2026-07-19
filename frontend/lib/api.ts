@@ -20,6 +20,7 @@ import type {
   TaskStatus,
   TaskUpdateInput,
   WorkflowRun,
+  WorkflowStep,
   WorkspaceEventPage,
 } from "@/types"
 
@@ -324,6 +325,13 @@ export function getProjectWorkflowRuns(
 ) {
   return apiRequest<WorkflowRun[]>(
     `/projects/${encodeURIComponent(projectId)}/runs`,
+    { signal },
+  )
+}
+
+export function getWorkflowRunSteps(runId: string, signal?: AbortSignal) {
+  return apiRequest<WorkflowStep[]>(
+    `/runs/${encodeURIComponent(runId)}/steps`,
     { signal },
   )
 }

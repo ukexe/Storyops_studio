@@ -14,6 +14,7 @@ import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 
 import { AnalysisPanel } from "@/components/items/AnalysisPanel"
+import { StructuredMetadata } from "@/components/items/StructuredMetadata"
 import { Header } from "@/components/shared/Header"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
@@ -261,9 +262,7 @@ export default function ItemDetailPage() {
                       >
                         Structured metadata
                       </h2>
-                      <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-xl border bg-muted/20 p-4 font-mono text-xs leading-5">
-                        {JSON.stringify(item.metadata, null, 2)}
-                      </pre>
+                      <StructuredMetadata metadata={item.metadata} />
                     </section>
                   ) : null}
 

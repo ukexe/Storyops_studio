@@ -5,13 +5,13 @@ import {
   ArrowRight,
   Bot,
   Boxes,
-  BrainCircuit,
   ChevronRight,
   Clock3,
   FileText,
   GitBranch,
   History,
   Layers3,
+  Palette,
   PanelRight,
   RefreshCw,
   Send,
@@ -32,11 +32,13 @@ import {
 } from "react"
 import { toast } from "sonner"
 
+import { RichContent } from "@/components/ai/RichContent"
+import { AssetTemplatePicker } from "@/components/control-plane/AssetTemplatePicker"
 import { ArtifactShelf } from "@/components/control-plane/ArtifactShelf"
 import { WorkflowTrace } from "@/components/control-plane/WorkflowTrace"
 import { WorkspaceTimeline } from "@/components/control-plane/WorkspaceTimeline"
 import { Header } from "@/components/shared/Header"
-import { WatsonxStatusBadge } from "@/components/shared/WatsonxStatusBadge"
+import { ProviderStatusBadge } from "@/components/shared/ProviderStatusBadge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -51,8 +53,11 @@ import {
   getProjectArtifacts,
   getProjectConversations,
   getProjectWorkflowRuns,
+  getWorkflowRunSteps,
   getWorkspaceEvents,
 } from "@/lib/api"
+import { safeInternalPath } from "@/lib/navigation"
+import type { AssetTemplate } from "@/lib/asset-catalog"
 import type {
   Artifact,
   Conversation,
@@ -67,12 +72,13 @@ import type {
 type InspectorTab = "run" | "artifacts" | "timeline"
 
 const QUICK_COMMANDS = [
-  "Analyze my uploaded documents",
+  "Analyze my project evidence",
   "Recommend the next action",
   "Why did confidence decrease?",
   "Show failed pipeline stage",
-  "Generate an executive impact report",
-  "Generate architecture and deployment plan",
+  "Generate a product requirements document",
+  "Generate a system architecture diagram",
+  "Generate a launch campaign graphic",
 ]
 
 function messageTime(value: string) {
@@ -87,6 +93,16 @@ function replaceById<T extends { id: string }>(current: T[], value: T) {
   return found
     ? current.map((candidate) => (candidate.id === value.id ? value : candidate))
     : [value, ...current]
+}
+
+function messageActions(messages: ConversationMessage[]) {
+  const latestAssistant = [...messages]
+    .reverse()
+    .find((message) => message.role === "assistant")
+  const value = latestAssistant?.metadata.recommended_actions
+  return Array.isArray(value)
+    ? value.filter((action): action is string => typeof action === "string")
+    : []
 }
 
 export default function ProjectConsolePage() {
@@ -105,6 +121,11 @@ export default function ProjectConsolePage() {
   const [events, setEvents] = useState<WorkspaceEvent[]>([])
   const [latestSteps, setLatestSteps] = useState<WorkflowStep[]>([])
   const [uiIntents, setUiIntents] = useState<UIIntent[]>([])
+  const [recommendedActions, setRecommendedActions] = useState<string[]>([])
+  const [replayContext, setReplayContext] = useState<{
+    runId: string
+    eventId: string
+  } | null>(null)
   const [composer, setComposer] = useState("")
   const [pendingMessage, setPendingMessage] = useState<string | null>(null)
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("run")
@@ -114,7 +135,8 @@ export default function ProjectConsolePage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [turnError, setTurnError] = useState<string | null>(null)
 
-  const latestRun = runs[0] ?? null
+  const latestRun =
+    runs.find((run) => run.conversation_id === activeConversationId) ?? null
 
   const loadWorkspace = useCallback(
     async (signal?: AbortSignal) => {
@@ -140,8 +162,19 @@ export default function ProjectConsolePage() {
         const firstConversation = conversationResponse[0]
         if (firstConversation) {
           setActiveConversationId(firstConversation.id)
-          setMessages(
-            await getConversationMessages(firstConversation.id, signal),
+          const initialMessages = await getConversationMessages(
+            firstConversation.id,
+            signal,
+          )
+          setMessages(initialMessages)
+          setRecommendedActions(messageActions(initialMessages))
+          const initialRun = runResponse.find(
+            (run) => run.conversation_id === firstConversation.id,
+          )
+          setLatestSteps(
+            initialRun
+              ? await getWorkflowRunSteps(initialRun.id, signal)
+              : [],
           )
         }
       } catch (caught) {
@@ -157,7 +190,7 @@ export default function ProjectConsolePage() {
         setLoadError(
           caught instanceof Error
             ? caught.message
-            : "Unable to load the operating console.",
+            : "Unable to load the AI Asset Studio.",
         )
       } finally {
         if (!signal?.aborted) setIsLoading(false)
@@ -186,6 +219,27 @@ export default function ProjectConsolePage() {
         sessionStorage.removeItem(key)
         composerRef.current?.focus()
       }
+      const replayKey = `storyops-console-replay:${projectId}`
+      const replay = sessionStorage.getItem(replayKey)
+      if (replay) {
+        try {
+          const parsed = JSON.parse(replay) as {
+            runId?: unknown
+            eventId?: unknown
+          }
+          if (
+            typeof parsed.runId === "string" &&
+            typeof parsed.eventId === "string"
+          ) {
+            setReplayContext({
+              runId: parsed.runId,
+              eventId: parsed.eventId,
+            })
+          }
+        } catch {
+          sessionStorage.removeItem(replayKey)
+        }
+      }
     }, 0)
     return () => window.clearTimeout(timer)
   }, [projectId])
@@ -205,9 +259,16 @@ export default function ProjectConsolePage() {
     setIsSwitchingConversation(true)
     setTurnError(null)
     try {
-      setMessages(await getConversationMessages(conversationId))
+      const conversationMessages = await getConversationMessages(conversationId)
+      const conversationRun = runs.find(
+        (run) => run.conversation_id === conversationId,
+      )
+      setMessages(conversationMessages)
+      setRecommendedActions(messageActions(conversationMessages))
       setActiveConversationId(conversationId)
-      setLatestSteps([])
+      setLatestSteps(
+        conversationRun ? await getWorkflowRunSteps(conversationRun.id) : [],
+      )
       setUiIntents([])
     } catch (caught) {
       setTurnError(
@@ -233,6 +294,8 @@ export default function ProjectConsolePage() {
       const result = await createConsoleTurn(projectId, {
         message,
         conversation_id: activeConversationId,
+        replay_from_run_id: replayContext?.runId ?? null,
+        replay_from_event_id: replayContext?.eventId ?? null,
         context: {
           current_page: window.location.pathname,
           selected_project_id: projectId,
@@ -258,10 +321,21 @@ export default function ProjectConsolePage() {
         ),
       ])
       setUiIntents(result.ui_intents)
+      setRecommendedActions(result.recommended_actions)
       setInspectorTab(result.artifacts.length ? "artifacts" : "run")
-      const eventResponse = await getWorkspaceEvents(projectId)
-      setEvents(eventResponse.events)
-      toast.success("Console run completed", {
+      if (replayContext) {
+        sessionStorage.removeItem(`storyops-console-replay:${projectId}`)
+        setReplayContext(null)
+      }
+      try {
+        const eventResponse = await getWorkspaceEvents(projectId)
+        setEvents(eventResponse.events)
+      } catch {
+        toast.warning("Run saved; timeline refresh is delayed", {
+          description: "Refresh the timeline to load the latest event.",
+        })
+      }
+      toast.success("Asset Studio run completed", {
         description: `${result.steps.length} transparent steps recorded.`,
       })
     } catch (caught) {
@@ -275,7 +349,7 @@ export default function ProjectConsolePage() {
       setTurnError(
         caught instanceof Error
           ? caught.message
-          : "The operating-console request failed.",
+          : "The AI Asset Studio request failed.",
       )
     } finally {
       setPendingMessage(null)
@@ -284,7 +358,11 @@ export default function ProjectConsolePage() {
   }
 
   function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.nativeEvent.isComposing
+    ) {
       event.preventDefault()
       void sendCommand()
     }
@@ -293,6 +371,23 @@ export default function ProjectConsolePage() {
   function setCommandDraft(command: string) {
     setComposer(command)
     window.requestAnimationFrame(() => composerRef.current?.focus())
+  }
+
+  function selectAssetTemplate(template: AssetTemplate) {
+    setCommandDraft(template.prompt)
+  }
+
+  function prepareReplay(event: WorkspaceEvent) {
+    if (!event.run_id) return
+    const replay = { runId: event.run_id, eventId: event.id }
+    setReplayContext(replay)
+    sessionStorage.setItem(
+      `storyops-console-replay:${projectId}`,
+      JSON.stringify(replay),
+    )
+    setCommandDraft(
+      "Compare the selected historical run with current project evidence and prepare a safe replay plan before proposing any new action.",
+    )
   }
 
   function retryLoad() {
@@ -311,14 +406,14 @@ export default function ProjectConsolePage() {
       <Header
         context={
           <span className="block max-w-48 truncate">
-            {project?.name ?? "AI operating console"}
+            {project?.name ?? "AI Asset Studio"}
           </span>
         }
       >
-        <WatsonxStatusBadge />
+        <ProviderStatusBadge />
       </Header>
 
-      <main className="mx-auto max-w-[1720px] px-3 py-5 sm:px-5">
+      <main className="mx-auto max-w-[1800px] px-3 py-5 sm:px-5">
         {isLoading ? (
           <div className="space-y-5">
             <Skeleton className="h-10 w-80 max-w-full" />
@@ -333,7 +428,7 @@ export default function ProjectConsolePage() {
         {!isLoading && loadError ? (
           <Alert variant="destructive">
             <AlertCircle />
-            <AlertTitle>Operating console unavailable</AlertTitle>
+            <AlertTitle>AI Asset Studio unavailable</AlertTitle>
             <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
               <span>{loadError}</span>
               <Button variant="outline" size="sm" onClick={retryLoad}>
@@ -351,18 +446,18 @@ export default function ProjectConsolePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="gap-1.5">
                     <TerminalSquare className="size-3" />
-                    IP Foundry control plane
+                    StoryOps intelligence control plane
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     Context-aware · tool-transparent · artifact-native
                   </span>
                 </div>
                 <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
-                  AI operating console
+                  AI Asset Studio
                 </h1>
                 <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-                  Ask about this workspace, inspect transparent delegation, and
-                  turn useful answers into durable artifacts and timeline evidence.
+                  Create polished documents, diagrams, code, analytics, and
+                  original visual assets grounded in this workspace.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -390,12 +485,12 @@ export default function ProjectConsolePage() {
             {turnError ? (
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle />
-                <AlertTitle>Console request failed</AlertTitle>
+                <AlertTitle>Asset Studio request failed</AlertTitle>
                 <AlertDescription>{turnError}</AlertDescription>
               </Alert>
             ) : null}
 
-            <div className="grid items-stretch gap-3 xl:grid-cols-[250px_minmax(0,1fr)_360px]">
+            <div className="grid items-stretch gap-3 xl:grid-cols-[250px_minmax(0,1fr)_420px]">
               <aside className="order-2 rounded-2xl border bg-card xl:order-1">
                 <div className="border-b p-4">
                   <div className="flex items-center justify-between gap-2">
@@ -409,6 +504,7 @@ export default function ProjectConsolePage() {
                         setMessages([])
                         setLatestSteps([])
                         setUiIntents([])
+                        setRecommendedActions([])
                         composerRef.current?.focus()
                       }}
                       disabled={isSending}
@@ -448,9 +544,18 @@ export default function ProjectConsolePage() {
 
                 <div className="border-t p-4">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Command library
+                    Asset library
                   </p>
-                  <div className="mt-3 space-y-1.5">
+                  <div className="mt-3">
+                    <AssetTemplatePicker
+                      compact
+                      onSelect={selectAssetTemplate}
+                    />
+                  </div>
+                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Quick actions
+                  </p>
+                  <div className="mt-2 space-y-1.5">
                     {QUICK_COMMANDS.map((command) => (
                       <button
                         type="button"
@@ -470,10 +575,10 @@ export default function ProjectConsolePage() {
                 <header className="flex items-center justify-between gap-3 border-b px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span className="flex size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                      <BrainCircuit className="size-4" />
+                      <Palette className="size-4" />
                     </span>
                     <div>
-                      <p className="text-xs font-semibold">Workspace orchestrator</p>
+                      <p className="text-xs font-semibold">Creative orchestrator</p>
                       <p className="text-[10px] text-muted-foreground">
                         Aware of {Object.values(project.item_counts).reduce((a, b) => a + b, 0)} items
                       </p>
@@ -492,25 +597,15 @@ export default function ProjectConsolePage() {
                         <Bot className="size-5" />
                       </span>
                       <h2 className="mt-4 text-lg font-semibold">
-                        Operate {project.name} through conversation
+                        Create the next asset for {project.name}
                       </h2>
                       <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
-                        I can inspect current items, analyses, tasks, runs, and
-                        artifacts. Report and architecture requests become reusable
-                        workspace assets with explicit model and confidence metadata.
+                        Generate professional documents, production visuals,
+                        diagrams, engineering contracts, plans, campaigns, and
+                        evidence-backed analytics without leaving the project.
                       </p>
-                      <div className="mt-6 grid w-full max-w-2xl gap-2 sm:grid-cols-2">
-                        {QUICK_COMMANDS.slice(0, 4).map((command) => (
-                          <button
-                            type="button"
-                            key={command}
-                            onClick={() => setCommandDraft(command)}
-                            className="rounded-xl border bg-background p-3 text-left text-xs hover:border-primary/35 hover:bg-primary/5"
-                          >
-                            <Sparkles className="mb-2 size-3.5 text-primary" />
-                            {command}
-                          </button>
-                        ))}
+                      <div className="mt-6 w-full max-w-3xl text-left">
+                        <AssetTemplatePicker onSelect={selectAssetTemplate} />
                       </div>
                     </div>
                   ) : (
@@ -536,9 +631,13 @@ export default function ProjectConsolePage() {
                                   : "border bg-background"
                               }`}
                             >
-                              <p className="whitespace-pre-wrap break-words text-sm leading-6">
-                                {message.content}
-                              </p>
+                              {isUser ? (
+                                <p className="whitespace-pre-wrap break-words text-sm leading-6">
+                                  {message.content}
+                                </p>
+                              ) : (
+                                <RichContent content={message.content} compact />
+                              )}
                               <div
                                 className={`mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] ${
                                   isUser
@@ -606,6 +705,28 @@ export default function ProjectConsolePage() {
                           </div>
                         </>
                       ) : null}
+                      {!pendingMessage && recommendedActions.length ? (
+                        <section className="ml-11 rounded-2xl border bg-primary/5 p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            Recommended next actions
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {recommendedActions.map((action) => (
+                              <Button
+                                key={action}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCommandDraft(action)}
+                                className="h-auto whitespace-normal py-2 text-left"
+                              >
+                                <Sparkles />
+                                {action}
+                              </Button>
+                            ))}
+                          </div>
+                        </section>
+                      ) : null}
                       <div ref={bottomRef} />
                     </div>
                   )}
@@ -625,7 +746,14 @@ export default function ProjectConsolePage() {
                           size="sm"
                           onClick={() => {
                             if (intent.type === "navigate") {
-                              router.push(intent.target)
+                              router.push(
+                                safeInternalPath(
+                                  intent.target,
+                                  `/projects/${projectId}/console`,
+                                ),
+                              )
+                            } else if (intent.type === "refresh") {
+                              retryLoad()
                             } else {
                               toast.info(intent.label)
                             }
@@ -640,18 +768,42 @@ export default function ProjectConsolePage() {
                 ) : null}
 
                 <form onSubmit={sendCommand} className="border-t bg-background p-3">
+                  {replayContext ? (
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+                      <span>
+                        Replay is grounded in run{" "}
+                        <span className="font-mono">
+                          {replayContext.runId.slice(0, 8)}
+                        </span>
+                        .
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="xs"
+                        onClick={() => {
+                          sessionStorage.removeItem(
+                            `storyops-console-replay:${projectId}`,
+                          )
+                          setReplayContext(null)
+                        }}
+                      >
+                        Clear replay
+                      </Button>
+                    </div>
+                  ) : null}
                   <div className="rounded-2xl border bg-card p-2 focus-within:ring-2 focus-within:ring-ring/50">
                     <Textarea
                       ref={composerRef}
                       value={composer}
                       onChange={(event) => setComposer(event.target.value)}
                       onKeyDown={handleComposerKeyDown}
-                      placeholder="Ask, analyze, explain, generate, or navigate…"
+                      placeholder="Describe the document, diagram, code, dashboard, or visual asset you need…"
                       rows={3}
                       maxLength={20_000}
                       disabled={isSending}
                       className="min-h-20 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
-                      aria-label="Operating-console command"
+                      aria-label="AI Asset Studio command"
                     />
                     <div className="flex items-center justify-between gap-3 px-1 pb-1">
                       <p className="text-[9px] text-muted-foreground">
@@ -675,7 +827,7 @@ export default function ProjectConsolePage() {
                   <div
                     className="grid grid-cols-3 gap-1"
                     role="tablist"
-                    aria-label="Console inspector"
+                    aria-label="Asset Studio inspector"
                   >
                     {(
                       [
@@ -688,6 +840,8 @@ export default function ProjectConsolePage() {
                         key={value}
                         type="button"
                         role="tab"
+                        id={`console-tab-${value}`}
+                        aria-controls={`console-panel-${value}`}
                         aria-selected={inspectorTab === value}
                         variant={inspectorTab === value ? "secondary" : "ghost"}
                         size="sm"
@@ -702,7 +856,12 @@ export default function ProjectConsolePage() {
                     ))}
                   </div>
                 </div>
-                <div className="max-h-[680px] overflow-y-auto p-3">
+                <div
+                  id={`console-panel-${inspectorTab}`}
+                  role="tabpanel"
+                  aria-labelledby={`console-tab-${inspectorTab}`}
+                  className="max-h-[680px] overflow-y-auto p-3"
+                >
                   {inspectorTab === "run" ? (
                     <WorkflowTrace run={latestRun} steps={latestSteps} />
                   ) : null}
@@ -713,11 +872,7 @@ export default function ProjectConsolePage() {
                     <WorkspaceTimeline
                       events={events}
                       compact
-                      onReplayFrom={(event) =>
-                        setCommandDraft(
-                          `Continue previous workflow from run ${event.run_id} and explain what will be replayed before taking action.`,
-                        )
-                      }
+                      onReplayFrom={prepareReplay}
                     />
                   ) : null}
                 </div>

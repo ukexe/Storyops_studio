@@ -1,21 +1,21 @@
 # StoryOps Studio Architecture
 
-> Release architecture for StoryOps Studio v2.0.0.
+> Release architecture for StoryOps Studio v2.1.0.
 
-## IP Foundry V2 control plane
+## StoryOps Studio V2 control plane
 
 V2 preserves StoryOps
 as the first creative workflow while adding durable conversations, messages,
 workflow runs and steps, reusable artifacts, and an append-only workspace event
-ledger. New authenticated routes provide a context-aware AI operating console
+ledger. New authenticated routes provide a context-aware AI Asset Studio
 and a replay-safe enterprise timeline.
 
-The production schema is applied through revision `7e34a290f9de`, and both
-Cloudflare Workers run v2.0.0. Roadmap-only
-capabilities such as embeddings, semantic search, pattern clustering, Atlas,
+The production schema is applied through revision `73ff11ca1f26`, and both
+Cloudflare Workers run v2.1.0. Roadmap-only
+capabilities such as embeddings, semantic search, pattern clustering, Knowledge map,
 and repository generation are clearly distinguished from implemented behavior.
 
-See [IP Foundry Agent V2 architecture](ip-foundry-v2-architecture.md) for the
+See [StoryOps V2 control-plane architecture](storyops-v2-control-plane-architecture.md) for the
 repository critique, target architecture, control-plane flow, data contracts,
 explainability model, timeline semantics, and dependency-ordered rollout.
 
@@ -29,7 +29,7 @@ Browser
 Cloudflare Workers — Next.js 16 through OpenNext
   ├─ Supabase Auth browser/server clients
   ├─ Next.js middleware session refresh and route protection
-  ├─ Dashboard, pipeline, analysis, tasks, AI console, and timeline
+  ├─ Dashboard, pipeline, analysis, tasks, AI Asset Studio, and timeline
   └─ Typed REST client with Supabase bearer token
   │
   │ HTTPS + Authorization: Bearer <Supabase JWT>
@@ -90,7 +90,8 @@ can access application and control-plane tables.
 - `/projects/[id]` — seven-stage pipeline.
 - `/projects/[id]/items/[itemId]` — content preview and AI analysis.
 - `/projects/[id]/tasks` — AI-generated task board.
-- `/projects/[id]/console` — context-aware AI operating console and run trace.
+- `/projects/[id]/console` — context-aware AI Asset Studio, rich asset preview,
+  and reloadable run trace.
 - `/projects/[id]/timeline` — searchable, correlation-aware event timeline.
 - `/settings` — live service, analysis-mode, and security-boundary status.
 
@@ -192,9 +193,10 @@ The live adapter uses `gpt-5.6-luna` through the OpenAI Responses API:
 - strict JSON Schema output for summaries, recommendations, priorities, and
   metrics;
 - text analysis for briefs, scripts, edits, feedback, and performance data;
-- low-detail multimodal input for private user assets and the demo thumbnail;
-- `store: false`, bounded content/metadata/output, a 60-second deadline, and
-  no model tools;
+- high-detail multimodal input for private user assets and the demo thumbnail;
+- GPT Image 1.5 generation for original project visuals, stored privately;
+- `store: false`, bounded content/metadata/output, and explicit deadlines;
+- no model-side mutating tools—the only hosted tool is image generation;
 - application-side output validation and capped task generation; and
 - deterministic rules fallback with a different audit ID on any provider error.
 
@@ -279,17 +281,19 @@ during re-analysis and does not poll.
 
 - Objective, run type, lifecycle status, progress, current agent, and confidence
 - Ordered specialist/tool steps with input/output summaries and dependencies
-- Start, completion, cancellation, approval, and failure-ready state model
+- Model ID, prompt version, and optional replay-source run
+- Reloadable steps and a failure-ready state model
 
 ### `artifacts`
 
-- Project, conversation, and source-message lineage
-- Type, title, content, status, version, and metadata
-- Model, confidence, run, and source-snapshot audit data
+- Project, conversation, source-message, and workflow-run lineage
+- Type, title, content, format, MIME type, status, version, and metadata
+- Private generated-media object path with expiring signed preview
+- Model, prompt, confidence, content hash, and source-snapshot audit data
 
 ### `workspace_events`
 
-- Append-only user, agent, tool, workflow, and system events
+- Application append-only user, agent, tool, workflow, and system events
 - Actor, object, run, artifact, correlation, and causation links
 - Human-readable summary, structured payload, model ID, and reversibility marker
 
@@ -315,13 +319,18 @@ read URLs; the database stores only the object path. The FastAPI Asset Agent
 downloads private objects through the secret-key client and accepts legacy
 public URLs only from the configured Supabase host without redirects.
 
+Generated visual artifacts use the same private bucket and a project-scoped
+object path. Artifact responses hydrate a signed URL only after project
+ownership is verified. Project deletion cleans up both uploaded item assets and
+generated visual artifacts.
+
 ## Deployment
 
 ### Live API
 
 - Cloudflare Worker configuration: `backend/cloudflare/wrangler.jsonc`.
 - Live API: `https://storyops-api.ukexe06.workers.dev`.
-- v2.0.0 Worker version: `d3674f7c-e879-4fd3-a00d-1343d0f05eff`.
+- v2.1.0 Worker version: `d3674f7c-e879-4fd3-a00d-1343d0f05eff`.
 - Backend-only Supabase and OpenAI keys configured as Worker secrets.
 - `gpt-5.6-luna` provides production text and vision analysis.
 - Deterministic fallback agents keep every workflow functional and use
@@ -340,7 +349,7 @@ public URLs only from the configured Supabase host without redirects.
 - Cloudflare Worker configuration: `frontend/wrangler.jsonc`.
 - OpenNext configuration: `frontend/open-next.config.ts`.
 - Live frontend: `https://storyops.ukexe06.workers.dev`.
-- v2.0.0 Worker version: `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`.
+- v2.1.0 Worker version: `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`.
 - Production API URL:
   `https://storyops-api.ukexe06.workers.dev/api/v1`.
 - Node.js 22.13 or newer.

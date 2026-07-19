@@ -1,5 +1,9 @@
 # Winning IBM AI Builders Challenge July 2026 – Creative Industries
 
+> Historical product-selection research. Current implemented behavior and
+> deployment status are documented in `README.md`, `docs/architecture.md`, and
+> `docs/release-report.md`.
+
 ## Executive Summary
 
 The IBM AI Builders Challenge with IBM Bob is a global, student-focused competition that requires teams to build portfolio-ready AI solutions using IBM Bob as the primary development partner and submit a working prototype, public GitHub repo, demo video, and SkillsBuild learning proof. July 2026’s theme, **Reimagine Creative Industries with AI**, explicitly centers on helping creators work smarter, exploring new forms of expression, and unlocking new creative possibilities across content, storytelling, and experience design.[^1][^2][^3]

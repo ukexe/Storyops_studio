@@ -99,6 +99,14 @@ def is_asset_path(value: str) -> bool:
     return True
 
 
+def is_asset_path_for_project(value: str, project_id: str | uuid.UUID) -> bool:
+    """Return whether an object path belongs to the expected project prefix."""
+    if not is_asset_path(value):
+        return False
+    path_project_id, _ = value.split("/", 1)
+    return path_project_id == str(project_id)
+
+
 def create_signed_asset_url(path: str, expires_in: int = 3600) -> str:
     if not is_asset_path(path):
         raise ValueError("Invalid asset object path")

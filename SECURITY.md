@@ -45,6 +45,8 @@ StoryOps uses:
 - Image magic-byte and size validation
 - Bounded AI inputs and outputs
 - OpenAI API storage disabled with `store: false`
+- Private generated-media storage with project-prefix ownership checks
+- Automatic Worker invocation logs disabled to avoid retaining auth headers
 - Explicit model and deterministic-fallback audit IDs
 - Exact-origin CORS and browser security headers
 - Git history secret scanning and dependency audits in CI

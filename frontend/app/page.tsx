@@ -1,13 +1,13 @@
 import type { Metadata } from "next"
 
-import { IPFoundryExperience } from "@/components/marketing/IPFoundryExperience"
+import { StoryOpsExperience } from "@/components/marketing/StoryOpsExperience"
 
 export const metadata: Metadata = {
-  title: "IP Foundry V2 · Enterprise Creative Intelligence",
+  title: "AI Creative Operations & Asset Studio",
   description:
-    "Explore StoryOps Studio's evolution into an explainable, multi-agent operating system for reusable IP discovery, governed generation, and measurable business impact.",
+    "Plan, analyze, and create production-ready project assets with StoryOps Studio's explainable creative pipeline, specialist AI, tasks, and timeline.",
 }
 
 export default function Home() {
-  return <IPFoundryExperience />
+  return <StoryOpsExperience />
 }

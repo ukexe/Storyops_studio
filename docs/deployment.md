@@ -22,7 +22,7 @@ Validate source
 ```
 
 Do not deploy the V2 API before all migrations through revision
-`7e34a290f9de` are applied.
+`73ff11ca1f26` are applied.
 
 ## 1. Prerequisites
 
@@ -62,7 +62,7 @@ python -m alembic upgrade head --sql
 Expected migration head:
 
 ```text
-7e34a290f9de
+73ff11ca1f26
 ```
 
 Edge API:
@@ -73,6 +73,7 @@ npm ci
 npm audit --audit-level=moderate
 npm test
 npm run typecheck
+npm run cf-typecheck
 npm run dry-run
 ```
 
@@ -85,13 +86,15 @@ npm audit --audit-level=moderate
 npm run lint
 npm test
 npm run typecheck
+npm run cf-typecheck
 ```
 
 Run the final OpenNext build in Linux CI or another Linux environment matching
 Cloudflare:
 
 ```bash
-npx opennextjs-cloudflare build
+npm run build:worker
+npm run dry-run
 ```
 
 The native Windows Next.js builder can report an upstream `kill EPERM` process
@@ -115,7 +118,7 @@ python -m alembic current
 Expected current revision:
 
 ```text
-7e34a290f9de
+73ff11ca1f26
 ```
 
 Verify:
@@ -126,11 +129,15 @@ Verify:
 - `workflow_steps`
 - `artifacts`
 - `workspace_events`
+- Artifact `format`, `mime_type`, `storage_path`, `model_id`, `run_id`, and
+  `content_sha256` columns
+- Workflow replay/model/prompt lineage columns
 - All foreign-key and query indexes
 - Lifecycle and confidence constraints
 - RLS enabled on every control-plane table
 - `anon` and `authenticated` table privileges revoked
-- `service_role` CRUD grants present
+- `service_role` CRUD grants present on mutable application tables
+- Runtime roles have only `SELECT` and `INSERT` on `workspace_events`
 - Existing private `assets` bucket remains private
 
 Run Supabase database advisors and resolve security or performance findings
@@ -164,6 +171,7 @@ Non-secret production configuration is in `wrangler.jsonc`:
 - `SUPABASE_URL`
 - `CORS_ORIGINS`
 - `OPENAI_MODEL`
+- `OPENAI_IMAGE_MODEL`
 
 Verify the configured CORS origin is exactly:
 
@@ -223,6 +231,10 @@ Verify `frontend/wrangler.jsonc` contains:
 
 These variables are public by design. No secret may appear in this file.
 
+Next.js inlines `NEXT_PUBLIC_*` values during the OpenNext build. Supply the
+same three values in the build environment; Wrangler runtime variables alone
+are not a replacement for build-time values.
+
 Generate bindings after configuration changes:
 
 ```bash
@@ -275,13 +287,15 @@ Follow [`demo-walkthrough.md`](demo-walkthrough.md):
 5. Open Brief, Script, and Asset analyses.
 6. Confirm provider model IDs.
 7. Move a generated task to **In progress**.
-8. Open the AI console.
+8. Open the AI Asset Studio.
 9. Generate an executive impact report.
-10. Verify the transparent workflow trace.
-11. Download or copy the artifact.
-12. Open Timeline and inspect correlated events.
-13. Sign out and sign back in.
-14. Confirm persisted state.
+10. Generate and download a rendered Mermaid architecture diagram.
+11. Generate an original visual and verify its private signed preview.
+12. Verify the transparent workflow trace and reload its steps.
+13. Download or copy the generated assets.
+14. Open Timeline and start an evidence-grounded replay.
+15. Sign out and sign back in.
+16. Confirm persisted state.
 
 Also verify:
 
@@ -290,7 +304,7 @@ Also verify:
 - Browser console contains no application errors.
 - Invalid and cross-tenant IDs do not expose resource existence.
 - A deliberate provider failure produces an explicit
-  `storyops/control-plane-rules-v1` or `storyops/edge-*` audit ID.
+  `storyops/control-plane-rules-v2` or `storyops/edge-*` audit ID.
 
 ## 10. Observability
 
@@ -337,7 +351,7 @@ Preserve:
 - GitHub Actions URLs
 - Public health response
 - Screenshot of the homepage
-- Screenshot of the console run trace
+- Screenshot of the AI Asset Studio and run trace
 - Screenshot of the workspace timeline
 - Real model audit IDs
 - IBM Bob session screenshots or exports

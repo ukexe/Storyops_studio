@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="docs/assets/storyops-hero.svg" alt="StoryOps Studio — IP Foundry V2" width="100%" />
+<img src="docs/assets/storyops-hero.svg" alt="StoryOps Studio — AI Creative Operations & Asset Studio" width="100%" />
 
-# StoryOps Studio — IP Foundry V2
+# StoryOps Studio — AI Creative Operations & Asset Studio
 
 ### An explainable AI operating system for creative production and reusable intelligence
 
-[![Release](https://img.shields.io/badge/release-v2.0.0-111827?style=flat-square)](https://github.com/ukexe/Storyops_studio/releases/tag/v2.0.0)
+[![Release](https://img.shields.io/badge/release-v2.1.0-111827?style=flat-square)](CHANGELOG.md)
 [![Backend CI](https://img.shields.io/github/actions/workflow/status/ukexe/Storyops_studio/backend-ci.yml?branch=main&label=backend%20CI&style=flat-square)](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://img.shields.io/github/actions/workflow/status/ukexe/Storyops_studio/frontend-ci.yml?branch=main&label=frontend%20CI&style=flat-square)](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-f38020?logo=cloudflare&logoColor=white&style=flat-square)](https://storyops.ukexe06.workers.dev)
@@ -18,7 +18,7 @@
 [Live application](https://storyops.ukexe06.workers.dev) ·
 [Live API health](https://storyops-api.ukexe06.workers.dev/health) ·
 [Architecture](docs/architecture.md) ·
-[V2 design](docs/ip-foundry-v2-architecture.md) ·
+[V2 design](docs/storyops-v2-control-plane-architecture.md) ·
 [Demo walkthrough](docs/demo-walkthrough.md)
 
 Built for the **IBM AI Builders Challenge 2026** — *Reimagine Creative Industries with AI*
@@ -34,9 +34,9 @@ YouTube teams, agencies, studios, and in-house creative organizations. It
 brings briefs, scripts, visual assets, edits, reviewer feedback, publishing
 readiness, and performance signals into one governed workflow.
 
-IP Foundry V2 extends that workflow with an enterprise control plane:
+StoryOps Studio extends that workflow with an enterprise control plane:
 
-- A project-aware AI operating console
+- A project-aware AI Asset Studio
 - Durable conversations, workflow runs, and transparent steps
 - Reusable report and architecture artifacts
 - An append-only workspace event timeline
@@ -49,8 +49,8 @@ operational decisions.
 
 ## Release status
 
-**v2.0.0 is live.** The production schema is applied through
-`7e34a290f9de`; API Worker v2.0.0 and the Linux-built OpenNext frontend are
+**v2.1.0 is live.** The production schema is applied through
+`73ff11ca1f26`; API Worker v2.1.0 and the Linux-built OpenNext frontend are
 deployed and production-smoke-tested. See
 [`docs/release-report.md`](docs/release-report.md) for version IDs and evidence.
 
@@ -100,18 +100,35 @@ recommends action, and reduces coordination work.
 - Optimistic task status changes with rollback
 - One-click, authenticated, idempotent judging demo
 
-### IP Foundry V2 control plane
+### AI Asset Studio
+
+- Eight guided asset categories: Documentation, Visual, Architecture,
+  Engineering, Product, Business, Marketing, and Analytics
+- Professional Markdown and GFM rendering with headings, lists, tables,
+  callouts, links, and responsive typography
+- Syntax-highlighted code and structured JSON downloads
+- Rendered Mermaid architecture, sequence, ER, workflow, Gantt, KPI, and
+  burndown visuals with SVG export
+- OpenAI image generation for original illustrations, storyboards, concepts,
+  logos, covers, banners, thumbnails, and campaign graphics
+- Generated images persisted in private Supabase Storage with signed previews
+- First-class artifact format, MIME type, storage path, model ID, run lineage,
+  prompt version, and SHA-256 integrity metadata
+- Deterministic, clearly labelled production briefs when hosted image
+  generation is unavailable
+
+### StoryOps intelligence control plane
 
 - Persistent project conversations
-- Context-aware AI operating console
+- Context-aware AI Asset Studio
 - Transparent workflow runs and steps
 - Typed tool-call receipts
 - Model and deterministic-fallback audit IDs
 - Confidence and recommended next actions
-- Versioned executive and architecture artifacts
+- Reusable documents, diagrams, code, analytics, and visual assets
 - Searchable workspace timeline
 - Correlation and causation across chat, runs, tools, and artifacts
-- Replay-plan handoff without mutating historical events
+- Evidence-grounded replay linked to the original run and event
 
 ### Trust and operations
 
@@ -123,6 +140,7 @@ recommends action, and reduces coordination work.
 - Exact-origin CORS
 - Bounded model inputs and outputs
 - OpenAI API storage disabled with `store: false`
+- Automatic Cloudflare invocation logs disabled to avoid retaining auth headers
 - Explicit provider disclosure and fallback behavior
 - Dependency audits, secret-history scanning, linting, tests, and bundle checks
 
@@ -150,7 +168,7 @@ recommends action, and reduces coordination work.
 
 6. **The platform is honest about maturity.**  
    The homepage labels capabilities as **Live**, **V2 foundation**, or
-   **Roadmap**. Semantic search, persisted Atlas graphs, and repository
+   **Roadmap**. Semantic search, persisted Knowledge map graphs, and repository
    generation are not marketed as deployed features.
 
 ## Product tour
@@ -161,7 +179,7 @@ recommends action, and reduces coordination work.
 4. Open the Brief, Script, and Asset analyses.
 5. Review scores, recommendations, model IDs, and generated tasks.
 6. Move a task to **In progress**.
-7. Open **AI console** and request a workspace analysis or executive report.
+7. Open **AI Asset Studio** and request a workspace analysis or executive report.
 8. Inspect the run trace, selected tools, confidence, and generated artifact.
 9. Open **Timeline** to trace the complete workflow and prepare a replay plan.
 
@@ -230,20 +248,22 @@ Prompts are:
 - Version-auditable through model/ruleset identifiers
 
 The production Worker uses the OpenAI Responses API with strict JSON Schema,
-low reasoning effort for predictable latency, `store: false`, and no model-side
-tools. Server-side code owns tool selection and mutation policy.
+low reasoning effort for predictable latency, and `store: false`. The only
+model-side tool is bounded image generation; server-side code owns storage,
+authorization, mutation policy, and audit persistence.
 
 ### Context handling
 
 Item analysis receives one persisted item and its validated metadata. The
-operating console assembles a bounded snapshot containing:
+AI Asset Studio assembles a bounded snapshot containing:
 
 - Project identity and description
 - Current item, stage, and type distribution
 - Latest available analyses and model IDs
 - Open and completed tasks
 - Current page and inspector context
-- Active conversation identity
+- Recent messages and reusable artifact excerpts
+- Persisted source run, steps, events, and artifacts for replay requests
 
 The context boundary is project-scoped and enforced server-side.
 
@@ -277,12 +297,14 @@ sequenceDiagram
 
 | Runtime | Provider | Purpose | Audit identifier |
 |---|---|---|---|
-| Production edge API | OpenAI Responses API | Structured text and vision analysis | `openai/<model>` |
+| Production edge API | OpenAI Responses API | Structured text, high-detail vision, and image generation | `openai/<model>` |
+| Production visual path | GPT Image 1.5 | Original private project visuals | `openai/gpt-image-1.5` |
 | Canonical FastAPI | IBM watsonx.ai / Granite | IBM enterprise text and vision path | `ibm/granite-*` |
 | Both runtimes | StoryOps deterministic rules | Resilient fallback and non-model analysis | `storyops/*` |
 
-Production currently uses the model configured by `OPENAI_MODEL`. Secrets stay
-in Cloudflare Worker secret storage and never enter browser-visible variables.
+Production uses the reasoning model configured by `OPENAI_MODEL` and the visual
+model configured by `OPENAI_IMAGE_MODEL`. Secrets stay in Cloudflare Worker
+secret storage and never enter browser-visible variables.
 
 ---
 
@@ -295,13 +317,13 @@ as a one-time code generator.
 |---|---|---|
 | Problem selection and brainstorming | Compared creative-industry problems, judged feasibility, and prioritized creative operations over another generation tool. | [`docs/research.md`](docs/research.md) |
 | Project planning | Converted the product concept into milestones, dependencies, acceptance checks, and hour-sized tasks. | [`docs/implementation-plan.md`](docs/implementation-plan.md), [`docs/tasks.md`](docs/tasks.md) |
-| System architecture | Designed the Next.js/FastAPI/Supabase boundaries, agent contract, provider separation, private asset flow, and V2 control plane. | [`docs/architecture.md`](docs/architecture.md), [`docs/ip-foundry-v2-architecture.md`](docs/ip-foundry-v2-architecture.md) |
+| System architecture | Designed the Next.js/FastAPI/Supabase boundaries, agent contract, provider separation, private asset flow, and V2 control plane. | [`docs/architecture.md`](docs/architecture.md), [`docs/storyops-v2-control-plane-architecture.md`](docs/storyops-v2-control-plane-architecture.md) |
 | Code generation | Scaffolded models, schemas, routers, frontend pages, typed API clients, agent implementations, migrations, and deployment configuration. | `frontend/`, `backend/` |
 | Debugging | Investigated auth redirects, API-contract drift, private asset delivery, provider failures, Cloudflare runtime behavior, CSP, and Windows build issues. | Tests, changelog, architecture failure notes |
 | Refactoring | Centralized agent dispatch, isolated provider clients, extracted the V2 control-plane service, and aligned edge/FastAPI contracts. | `backend/app/agents/dispatcher.py`, `backend/app/services/`, `backend/cloudflare/src/control-plane.ts` |
 | Documentation | Produced research, architecture, implementation, deployment, release, demo, and submission documentation from the working code. | `docs/`, `README.md` |
 | Testing | Generated focused tests for authentication, ownership, storage, agents, demo seeding, API contracts, events, artifacts, fallback, and cursor pagination. | `backend/tests/`, `backend/cloudflare/src/index.test.ts`, `frontend/lib/navigation.test.ts` |
-| UI improvements | Iterated from a basic landing page into an interactive architecture and capability experience, then added the operating console and timeline. | `frontend/components/marketing/`, `frontend/components/control-plane/` |
+| UI improvements | Iterated from a basic landing page into an interactive architecture and capability experience, then added the AI Asset Studio and timeline. | `frontend/components/marketing/`, `frontend/components/control-plane/` |
 | Developer productivity | Maintained project-specific rules, repeatable validation commands, explicit constraints, and implementation handoff notes. | `AGENTS.md`, `.bob/`, CI workflows |
 
 Bob-specific guidance is stored under `.bob/` for planning, implementation, and
@@ -448,7 +470,7 @@ StoryOps-Studio/
 ├── docs/
 │   ├── assets/                   # README and submission media
 │   ├── architecture.md
-│   ├── ip-foundry-v2-architecture.md
+│   ├── storyops-v2-control-plane-architecture.md
 │   ├── demo-walkthrough.md
 │   ├── implementation-plan.md
 │   ├── release-report.md
@@ -600,6 +622,7 @@ Open `http://localhost:3000`.
 | `DATABASE_URL` | FastAPI/Alembic | Secret | Yes | PostgreSQL session-pooler connection |
 | `OPENAI_API_KEY` | Edge API | Secret | Production | OpenAI Responses API |
 | `OPENAI_MODEL` | Edge API | Server | Yes | Explicit production model selection |
+| `OPENAI_IMAGE_MODEL` | Edge API | Server | Yes | Explicit image-generation model |
 | `WATSONX_API_KEY` | FastAPI | Secret | Canonical path | IBM Cloud authentication |
 | `WATSONX_PROJECT_ID` | FastAPI | Secret | Canonical path | watsonx.ai project |
 | `WATSONX_URL` | FastAPI | Server | Yes | watsonx.ai regional endpoint |
@@ -630,6 +653,7 @@ npm ci
 npm audit --audit-level=moderate
 npm test
 npm run typecheck
+npm run cf-typecheck
 npm run dry-run
 ```
 
@@ -642,7 +666,9 @@ npm audit --audit-level=moderate
 npm run lint
 npm test
 npm run typecheck
-npm run build
+npm run cf-typecheck
+npm run build:worker
+npm run dry-run
 ```
 
 > On this Windows development host, Next.js can finish compilation and
@@ -672,7 +698,7 @@ python -m alembic upgrade head
 Current V2 head:
 
 ```text
-7e34a290f9de
+73ff11ca1f26
 ```
 
 ### Deploy the Cloudflare API Worker
@@ -683,6 +709,7 @@ npx wrangler whoami
 npm ci
 npm test
 npm run typecheck
+npm run cf-typecheck
 npm run dry-run
 npm run deploy
 ```
@@ -709,6 +736,7 @@ npm ci
 npm run lint
 npm test
 npm run typecheck
+npm run cf-typecheck
 npm run deploy
 ```
 
@@ -733,19 +761,14 @@ Deploy this path only with valid IBM watsonx credentials.
 
 ## Screenshots
 
-### Deployed V2 product experience
-
-<img src="docs/assets/homepage.png" alt="Deployed StoryOps Studio IP Foundry V2 homepage" width="100%" />
-
 | Experience | Link |
 |---|---|
 | Interactive product architecture and capability explorer | [Open live homepage](https://storyops.ukexe06.workers.dev) |
 | Authenticated creative pipeline | Sign in, seed the judging demo, and open the generated project |
-| AI operating console | Open **AI console** inside a project |
+| AI Asset Studio | Open **AI Asset Studio** inside a project |
 | Replayable enterprise timeline | Open **Timeline** inside a project |
 
-The vector hero and current production screenshot are stored under
-[`docs/assets/`](docs/assets/).
+The release hero is stored under [`docs/assets/`](docs/assets/).
 
 ## Demo GIF / video
 
@@ -775,7 +798,7 @@ creative material in public issues.
 ## Documentation
 
 - [System architecture](docs/architecture.md)
-- [IP Foundry V2 architecture](docs/ip-foundry-v2-architecture.md)
+- [StoryOps Studio V2 architecture](docs/storyops-v2-control-plane-architecture.md)
 - [Implementation plan](docs/implementation-plan.md)
 - [Task and release gates](docs/tasks.md)
 - [Demo walkthrough](docs/demo-walkthrough.md)
@@ -799,7 +822,7 @@ creative material in public issues.
 - Versioned source records and evidence-addressable chunks
 - Embedding pipeline and authorized semantic search
 - Pattern candidates, duplicate detection, and similarity clustering
-- Persistent Atlas knowledge graph
+- Persistent project knowledge map
 - Sandboxed repository generation
 - Impact observations, assumptions, forecasts, and sensitivity analysis
 
@@ -826,7 +849,7 @@ StoryOps Studio is released under the [MIT License](LICENSE).
 
 <div align="center">
 
-**StoryOps Studio · IP Foundry V2**
+**StoryOps Studio · AI Creative Operations**
 
 Creative evidence → explainable intelligence → accountable action
 

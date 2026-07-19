@@ -26,7 +26,6 @@ import {
   PackageCheck,
   Pause,
   Play,
-  RefreshCw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -50,7 +49,7 @@ import {
 import { getHealth } from "@/lib/api"
 import type { HealthResponse } from "@/types"
 
-import styles from "./IPFoundryExperience.module.css"
+import styles from "./StoryOpsExperience.module.css"
 
 type CapabilityStatus = "Live" | "V2 foundation" | "Roadmap"
 type CapabilityCategory =
@@ -105,7 +104,7 @@ const CAPABILITIES: Capability[] = [
     status: "Live",
     icon: FileUp,
     purpose: "Bring text and private visual assets into an owned workspace.",
-    inputs: "Briefs, scripts, review notes, images, and structured edit or performance JSON.",
+    inputs: "Briefs, scripts, review notes, images, guided scene timing, and performance metrics.",
     outputs: "Validated items, private object paths, signed previews, and typed metadata.",
     models: "No model at ingestion; content remains bounded and validated before analysis.",
     businessValue: "Replaces scattered handoffs with one governed intake boundary.",
@@ -119,7 +118,7 @@ const CAPABILITIES: Capability[] = [
     id: "documents",
     title: "Document Intelligence",
     category: "Intelligence",
-    status: "V2 foundation",
+    status: "Roadmap",
     icon: FileSearch,
     purpose: "Turn long-form source material into structured, evidence-addressable knowledge.",
     inputs: "Uploaded documents, scripts, briefs, repository docs, and reviewer notes.",
@@ -194,7 +193,7 @@ const CAPABILITIES: Capability[] = [
     outputs: "Vector records, embedding audit metadata, and freshness state.",
     models: "Enterprise embedding model selected through a provider adapter.",
     businessValue: "Makes institutional knowledge discoverable by meaning rather than filenames.",
-    enterpriseUse: "Cross-repository discovery, duplicate IP detection, and evidence-grounded chat.",
+    enterpriseUse: "Cross-repository discovery, duplicate work detection, and evidence-grounded chat.",
     example: "Two differently named playbooks are recognized as 91% semantically overlapping.",
     architecture: "Chunk queue → embedding batcher → vector store → freshness and lineage checks.",
     stage: "Index",
@@ -223,7 +222,7 @@ const CAPABILITIES: Capability[] = [
     category: "Generate",
     status: "Roadmap",
     icon: Code2,
-    purpose: "Package validated IP into a governed, reviewable repository.",
+    purpose: "Package validated knowledge into a governed, reviewable repository.",
     inputs: "Approved patterns, architecture decisions, requirements, templates, and policies.",
     outputs: "Repository tree, code, tests, documentation, CI, deployment plan, and manifest.",
     models: "Granite Code with architecture, security, documentation, and review agents.",
@@ -235,8 +234,8 @@ const CAPABILITIES: Capability[] = [
     dependencies: "Pattern approval, artifact store, sandbox, policy gates, code review, export service.",
   },
   {
-    id: "atlas",
-    title: "Atlas Knowledge Graph",
+    id: "knowledge-map",
+    title: "Project Knowledge Map",
     category: "Intelligence",
     status: "Roadmap",
     icon: Globe2,
@@ -257,7 +256,7 @@ const CAPABILITIES: Capability[] = [
     category: "Generate",
     status: "Roadmap",
     icon: BarChart3,
-    purpose: "Translate discovered IP into measurable business and technical impact.",
+    purpose: "Translate discovered knowledge into measurable business and technical impact.",
     inputs: "Reuse evidence, delivery metrics, cost assumptions, risks, adoption, and outcomes.",
     outputs: "ROI forecast, confidence interval, cost estimate, maturity score, and executive narrative.",
     models: "Impact Analyst with deterministic formulas and Granite narrative synthesis.",
@@ -289,7 +288,7 @@ const CAPABILITIES: Capability[] = [
     id: "analytics",
     title: "Analytics",
     category: "Operate",
-    status: "V2 foundation",
+    status: "Roadmap",
     icon: Activity,
     purpose: "Measure quality, throughput, bottlenecks, confidence, and model operations.",
     inputs: "Workflow events, analysis metrics, task state, latency, cost, and human corrections.",
@@ -306,7 +305,7 @@ const CAPABILITIES: Capability[] = [
     id: "activity",
     title: "Activity Feed",
     category: "Operate",
-    status: "V2 foundation",
+    status: "Roadmap",
     icon: MessageSquare,
     purpose: "Give teams a concise, permission-aware view of what changed and why.",
     inputs: "Workspace events and their human-readable summaries.",
@@ -346,7 +345,7 @@ const ARCHITECTURE_LAYERS: ArchitectureLayer[] = [
     status: "V2 foundation",
     icon: Layers3,
     description:
-      "One operating surface for chat, Atlas, artifacts, pipeline, analytics, and timeline.",
+      "One operating surface for the Asset Studio, artifacts, pipeline, tasks, and timeline.",
     responsibilities: [
       "Context-aware navigation and command palette",
       "Bidirectional chat and artifact synchronization",
@@ -358,7 +357,7 @@ const ARCHITECTURE_LAYERS: ArchitectureLayer[] = [
     id: "control",
     name: "Control plane",
     label: "Orchestrator + policy",
-    status: "Roadmap",
+    status: "V2 foundation",
     icon: BrainCircuit,
     description:
       "Translates intent into approved plans, specialist delegation, and UI actions.",
@@ -418,81 +417,81 @@ const ARCHITECTURE_LAYERS: ArchitectureLayer[] = [
 
 const CONSOLE_SCENARIOS: ConsoleScenario[] = [
   {
-    command: "Analyze my uploaded documents",
-    objective: "Build an evidence-backed inventory of reusable knowledge.",
-    agents: ["Orchestrator", "Extraction Agent", "Pattern Agent"],
-    tools: ["source inventory", "document parser", "evidence linker"],
-    result: "12 knowledge candidates grouped into four reusable themes.",
-    artifact: "Discovery report · Markdown + Atlas nodes",
+    command: "Generate a product requirements document",
+    objective: "Turn project evidence into a decision-ready specification.",
+    agents: ["Technical Writer"],
+    tools: ["workspace context", "analysis evidence", "artifact writer"],
+    result: "A structured PRD with requirements, risks, and acceptance criteria.",
+    artifact: "Product requirements · Rich Markdown",
   },
   {
-    command: "Compare these two repositories",
-    objective: "Find overlap, divergence, quality risks, and merge opportunities.",
-    agents: ["Repository Agent", "Architecture Agent", "Security Auditor"],
-    tools: ["repository search", "semantic diff", "dependency analyzer"],
-    result: "Three duplicated services, one security divergence, and a merge plan.",
-    artifact: "Repository comparison · Technical report",
+    command: "Generate a system architecture diagram",
+    objective: "Visualize the implemented runtime and trust boundaries.",
+    agents: ["Diagram Architect"],
+    tools: ["workspace context", "analysis evidence", "artifact writer"],
+    result: "A rendered, downloadable architecture diagram.",
+    artifact: "System architecture · Mermaid + SVG",
   },
   {
-    command: "Why did confidence decrease?",
-    objective: "Explain the score change without hiding uncertainty.",
-    agents: ["Impact Analyst", "Evidence Agent"],
-    tools: ["version comparison", "confidence factors", "source lineage"],
-    result: "Two sources became stale and one contradictory review was added.",
-    artifact: "Confidence explanation · Audit receipt",
+    command: "Generate a launch campaign graphic",
+    objective: "Create an original visual grounded in the project direction.",
+    agents: ["Visual Designer"],
+    tools: ["workspace context", "image generation", "artifact writer"],
+    result: "A private, downloadable project visual with model lineage.",
+    artifact: "Campaign graphic · JPEG",
   },
   {
-    command: "Generate an executive report",
+    command: "Generate an executive impact report",
     objective: "Translate technical evidence into an adoption decision.",
-    agents: ["Impact Analyst", "Business Analyst", "Technical Writer"],
-    tools: ["ROI model", "risk register", "document generator"],
+    agents: ["Impact Analyst"],
+    tools: ["workspace context", "analysis evidence", "artifact writer"],
     result: "A decision brief with assumptions, ranges, risks, and next actions.",
-    artifact: "Executive impact brief · PDF-ready document",
+    artifact: "Executive impact brief · Rich Markdown",
   },
 ]
 
 const PIPELINE_STEPS = [
   {
-    name: "Capture",
-    agent: "Upload Engine",
-    detail: "Validate files, record ownership, and establish source versions.",
-    output: "Governed source records",
+    name: "Idea",
+    agent: "Brief Agent",
+    detail: "Capture the objective, audience, constraints, and missing decisions.",
+    output: "Structured brief",
   },
   {
-    name: "Understand",
-    agent: "Extraction Agent",
-    detail: "Extract entities, claims, constraints, decisions, and evidence anchors.",
-    output: "Structured knowledge",
+    name: "Script",
+    agent: "Script Agent",
+    detail: "Evaluate hook, pacing, narrative clarity, and call to action.",
+    output: "Script recommendations",
   },
   {
-    name: "Discover",
-    agent: "Pattern Agent",
-    detail: "Cluster similar evidence and propose reusable patterns or duplicates.",
-    output: "Scored candidates",
+    name: "Assets",
+    agent: "Asset Agent",
+    detail: "Review composition, legibility, hierarchy, and visual consistency.",
+    output: "Visual QA",
   },
   {
-    name: "Validate",
-    agent: "Architecture + Security",
-    detail: "Challenge feasibility, quality, compliance, and enterprise readiness.",
-    output: "Approved IP",
+    name: "Edit",
+    agent: "Edit Agent",
+    detail: "Inspect scene timing and pacing from a structured edit timeline.",
+    output: "Pacing signals",
   },
   {
-    name: "Package",
-    agent: "Repository Agent",
-    detail: "Generate versioned repositories, docs, diagrams, and adoption assets.",
-    output: "Reusable artifact bundle",
+    name: "Feedback",
+    agent: "Feedback Agent",
+    detail: "Convert reviewer notes into clear, prioritized work.",
+    output: "Actionable tasks",
   },
   {
-    name: "Govern",
-    agent: "Policy Engine",
-    detail: "Capture approvals, provenance, ownership, and release evidence.",
-    output: "Auditable release",
+    name: "Publish",
+    agent: "Human review",
+    detail: "Confirm readiness while preserving the model and evidence trail.",
+    output: "Approved release",
   },
   {
-    name: "Measure",
-    agent: "Impact Analyst",
-    detail: "Track reuse, cost, quality, adoption, and forecasted ROI.",
-    output: "Impact report",
+    name: "Analyze",
+    agent: "Performance Agent",
+    detail: "Connect views, retention, and CTR back to production decisions.",
+    output: "Learning loop",
   },
 ]
 
@@ -729,7 +728,7 @@ function ArchitectureExplorer() {
         className={`rounded-3xl border bg-card p-6 sm:p-8 ${styles.featureReveal}`}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.17em] text-primary">
               {selected.label}
             </p>
@@ -939,10 +938,10 @@ function PipelineWalkthrough() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.17em] text-primary">
-            Discovery pipeline
+            Creative production pipeline
           </p>
           <h3 className="mt-2 text-2xl font-semibold tracking-tight">
-            From source material to measurable reusable IP
+            From idea to published work and measurable learning
           </h3>
         </div>
         <Button
@@ -1033,11 +1032,11 @@ function PipelineWalkthrough() {
   )
 }
 
-function AtlasPreview() {
+function KnowledgeMapPreview() {
   return (
     <div
-      className={`relative min-h-[390px] overflow-hidden rounded-3xl border ${styles.atlasSurface}`}
-      aria-label="Illustrative Atlas knowledge graph"
+      className={`relative min-h-[390px] overflow-hidden rounded-3xl border ${styles.knowledgeMapSurface}`}
+      aria-label="Illustrative project knowledge map"
     >
       <svg
         className="absolute inset-0 size-full"
@@ -1045,23 +1044,23 @@ function AtlasPreview() {
         preserveAspectRatio="none"
         aria-hidden
       >
-        <line x1="400" y1="205" x2="150" y2="95" className={styles.atlasLine} />
-        <line x1="400" y1="205" x2="660" y2="85" className={styles.atlasLine} />
-        <line x1="400" y1="205" x2="165" y2="335" className={styles.atlasLine} />
-        <line x1="400" y1="205" x2="645" y2="335" className={styles.atlasLine} />
+        <line x1="400" y1="205" x2="150" y2="95" className={styles.knowledgeMapLine} />
+        <line x1="400" y1="205" x2="660" y2="85" className={styles.knowledgeMapLine} />
+        <line x1="400" y1="205" x2="165" y2="335" className={styles.knowledgeMapLine} />
+        <line x1="400" y1="205" x2="645" y2="335" className={styles.knowledgeMapLine} />
         <line
           x1="150"
           y1="95"
           x2="660"
           y2="85"
-          className={styles.atlasLineSecondary}
+          className={styles.knowledgeMapLineSecondary}
         />
         <line
           x1="165"
           y1="335"
           x2="645"
           y2="335"
-          className={styles.atlasLineSecondary}
+          className={styles.knowledgeMapLineSecondary}
         />
       </svg>
 
@@ -1069,7 +1068,7 @@ function AtlasPreview() {
         <span className="mx-auto flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
           <Globe2 className="size-4" />
         </span>
-        <p className="mt-2 text-sm font-semibold">Reusable IP</p>
+        <p className="mt-2 text-sm font-semibold">Reusable knowledge</p>
         <p className="mt-1 text-[10px] text-muted-foreground">
           Confidence 0.87
         </p>
@@ -1117,28 +1116,28 @@ function AtlasPreview() {
 function TimelinePreview() {
   const events = [
     {
-      title: "Sources uploaded",
+      title: "Project created",
       meta: "User · 09:42:11",
-      detail: "4 documents and 1 repository manifest validated.",
-      icon: FileUp,
+      detail: "Owned creative workspace created with an auditable project event.",
+      icon: Layers3,
     },
     {
-      title: "Discovery delegated",
-      meta: "Orchestrator · 09:42:16",
-      detail: "Extraction and Pattern agents started under run IF-2048.",
+      title: "Script analysis completed",
+      meta: "Script Agent · 09:42:16",
+      detail: "Hook, pacing, CTA, model ID, recommendations, and tasks persisted.",
       icon: Workflow,
     },
     {
-      title: "Candidate promoted",
-      meta: "Human approval · 09:43:08",
-      detail: "API governance pattern accepted with 0.87 confidence.",
-      icon: PackageCheck,
+      title: "Architecture diagram generated",
+      meta: "Diagram Architect · 09:43:08",
+      detail: "Mermaid source, rendered preview, run steps, and content hash saved.",
+      icon: Network,
     },
     {
-      title: "Impact brief generated",
-      meta: "Impact Analyst · 09:43:26",
-      detail: "Artifact v3 linked to evidence, assumptions, and cost model.",
-      icon: BarChart3,
+      title: "Campaign graphic generated",
+      meta: "Visual Designer · 09:43:26",
+      detail: "Private image asset linked to its model, prompt version, and source run.",
+      icon: Sparkles,
     },
   ]
 
@@ -1147,7 +1146,7 @@ function TimelinePreview() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.17em] text-primary">
-            Enterprise workspace timeline
+            Workspace timeline
           </p>
           <h3 className="mt-2 text-2xl font-semibold tracking-tight">
             Every action becomes explainable evidence.
@@ -1186,18 +1185,16 @@ function TimelinePreview() {
         ))}
       </div>
       <div className="mt-5 flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" disabled>
-          <Play />
-          Replay workflow
-        </Button>
-        <Button variant="ghost" size="sm" disabled>
-          <RefreshCw />
-          Create compensating run
+        <Button asChild variant="outline" size="sm">
+          <Link href="/login">
+            <Play />
+            Open replay timeline
+          </Link>
         </Button>
       </div>
       <p className="mt-3 text-[10px] leading-4 text-muted-foreground">
-        V2 foundation preview: replay creates a new auditable run; it never
-        mutates historical events.
+        Live foundation: replay creates a new source-linked run and never mutates
+        the selected historical event.
       </p>
     </div>
   )
@@ -1213,7 +1210,7 @@ function CommandPalette({
   const actions = [
     { label: "Explore capabilities", href: "#capabilities", icon: Search },
     { label: "Inspect architecture", href: "#architecture", icon: Network },
-    { label: "Preview the AI console", href: "#console", icon: Command },
+    { label: "Preview the AI Asset Studio", href: "#console", icon: Command },
     { label: "Open the live dashboard", href: "/login", icon: Activity },
   ]
 
@@ -1254,7 +1251,7 @@ function CommandPalette({
   )
 }
 
-export function IPFoundryExperience() {
+export function StoryOpsExperience() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
 
@@ -1279,7 +1276,7 @@ export function IPFoundryExperience() {
 
   return (
     <main
-      className={`${styles.foundryHome} min-h-screen overflow-hidden bg-background text-foreground`}
+      className={`${styles.storyOpsHome} min-h-screen overflow-hidden bg-background text-foreground`}
     >
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
 
@@ -1293,7 +1290,7 @@ export function IPFoundryExperience() {
             </span>
             <span className="font-semibold tracking-tight">StoryOps</span>
             <span className="hidden rounded-md border bg-muted/50 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground sm:inline">
-              IP Foundry V2
+              Release 2.1
             </span>
           </Link>
 
@@ -1305,7 +1302,7 @@ export function IPFoundryExperience() {
               ["Platform", "#platform"],
               ["Architecture", "#architecture"],
               ["Capabilities", "#capabilities"],
-              ["Atlas", "#atlas"],
+              ["Knowledge map", "#knowledge-map"],
               ["Roadmap", "#roadmap"],
             ].map(([label, href]) => (
               <a
@@ -1332,12 +1329,13 @@ export function IPFoundryExperience() {
               </kbd>
             </button>
             <ThemeToggle />
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="hidden sm:flex">
               <Link href="/login">Sign in</Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/register">
-                Enter workspace
+                <span className="hidden sm:inline">Enter workspace</span>
+                <span className="sm:hidden">Start</span>
                 <ArrowRight />
               </Link>
             </Button>
@@ -1355,14 +1353,14 @@ export function IPFoundryExperience() {
           aria-hidden
         />
         <div className="relative mx-auto grid max-w-[1500px] gap-14 px-4 pb-20 pt-16 sm:px-6 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:pb-28 lg:pt-28">
-          <div>
+          <div className="min-w-0">
             <div className="mb-6 flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
                 className={`rounded-full px-3 py-1 ${styles.glassPanel}`}
               >
                 <CircleDot className="mr-1.5 size-3 text-primary" />
-                Enterprise creative intelligence
+                AI creative operations
               </Badge>
               <span className="text-xs text-muted-foreground">
                 Built with IBM Bob · Granite canonical path · live OpenAI inference
@@ -1370,14 +1368,14 @@ export function IPFoundryExperience() {
             </div>
 
             <h1 className="max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-balance sm:text-6xl lg:text-[4.75rem]">
-              Turn creative work into{" "}
-              <span className="text-primary">reusable intelligence.</span>
+              Turn project context into{" "}
+              <span className="text-primary">production-ready assets.</span>
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
-              StoryOps is evolving from a production pipeline into IP Foundry:
-              an explainable AI operating system that captures source material,
-              discovers repeatable patterns, coordinates specialist agents, and
-              packages knowledge into governed assets teams can reuse.
+              StoryOps Studio unifies a seven-stage creative pipeline with an AI
+              Asset Studio that generates polished documents, diagrams, code,
+              analytics, and original visuals—all with project context, model
+              lineage, and an explainable event timeline.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -1400,7 +1398,7 @@ export function IPFoundryExperience() {
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative min-w-0">
             <div
               className={`absolute -inset-6 rounded-[2.5rem] bg-primary/5 blur-2xl`}
               aria-hidden
@@ -1413,11 +1411,11 @@ export function IPFoundryExperience() {
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-emerald-500" />
                     <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                      Workspace intelligence
+                      AI Asset Studio
                     </span>
                   </div>
                   <Badge variant="secondary" className="font-mono text-[9px]">
-                    IF-2048
+                    RUN-2048
                   </Badge>
                 </div>
 
@@ -1429,11 +1427,11 @@ export function IPFoundryExperience() {
                       </span>
                       <div>
                         <p className="font-mono text-xs">
-                          Find duplicate IP and recommend the next action.
+                          Generate a launch campaign graphic.
                         </p>
                         <p className="mt-2 text-[11px] leading-5 text-muted-foreground">
-                          Objective decomposed into evidence retrieval,
-                          similarity analysis, architecture validation, and impact scoring.
+                          Project context assembled, visual brief refined, image
+                          generated, and private asset persisted.
                         </p>
                       </div>
                     </div>
@@ -1441,9 +1439,9 @@ export function IPFoundryExperience() {
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     {([
-                      ["12", "Sources indexed", FileSearch],
-                      ["4", "Patterns found", GitBranch],
-                      ["0.87", "Top confidence", Activity],
+                      ["8", "Asset categories", FileText],
+                      ["5", "Output formats", PackageCheck],
+                      ["0.86", "Confidence", Activity],
                     ] satisfies Array<[string, string, LucideIcon]>).map(
                       ([value, label, Icon]) => (
                       <div key={String(label)} className="rounded-2xl border p-3">
@@ -1459,16 +1457,16 @@ export function IPFoundryExperience() {
 
                   <div className="mt-4 rounded-2xl border p-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold">Agent delegation</p>
+                      <p className="text-xs font-semibold">Asset workflow</p>
                       <span className="text-[9px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                        In progress
+                        Completed
                       </span>
                     </div>
                     <div className="mt-4 flex items-center justify-between gap-2">
                       {([
-                        ["Orchestrator", BrainCircuit],
-                        ["Pattern", GitBranch],
-                        ["Impact", BarChart3],
+                        ["Context", BrainCircuit],
+                        ["Image model", Sparkles],
+                        ["Private asset", PackageCheck],
                       ] satisfies Array<[string, LucideIcon]>).map(
                         ([label, Icon], index) => (
                         <div key={String(label)} className="contents">
@@ -1489,7 +1487,7 @@ export function IPFoundryExperience() {
                     </div>
                     <div className="mt-4 h-1 overflow-hidden rounded-full bg-muted">
                       <div
-                        className={`h-full w-[74%] rounded-full bg-primary ${styles.metricBar}`}
+                        className={`h-full w-full rounded-full bg-primary ${styles.metricBar}`}
                       />
                     </div>
                   </div>
@@ -1523,12 +1521,12 @@ export function IPFoundryExperience() {
               The problem
             </p>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
-              Enterprises create valuable knowledge every day—and lose it in delivery.
+              Creative teams lose context every time work changes tools.
             </h2>
             <p className="mt-5 text-sm leading-7 text-muted-foreground sm:text-base">
-              Briefs, repositories, decisions, reviews, and outcomes live in
-              disconnected tools. Teams repeatedly solve the same problem because
-              reusable IP is hard to discover, validate, govern, and adopt.
+              Briefs, scripts, visuals, edit decisions, reviewer notes, tasks, and
+              performance signals become disconnected. StoryOps keeps the evidence,
+              AI output, action, and production history in one owned project.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1540,13 +1538,13 @@ export function IPFoundryExperience() {
               },
               {
                 icon: Search,
-                title: "Invisible duplication",
-                text: "Similar solutions are rebuilt under different names and teams.",
+                title: "Disposable AI output",
+                text: "Useful generations disappear in chat instead of becoming project assets.",
               },
               {
                 icon: ShieldCheck,
-                title: "Weak governance",
-                text: "Recommendations lack explainable evidence, approval, and audit context.",
+                title: "Weak traceability",
+                text: "Recommendations lack project evidence, model identity, and a durable run trace.",
               },
               {
                 icon: TimerReset,
@@ -1581,12 +1579,13 @@ export function IPFoundryExperience() {
                 Primary interaction model
               </p>
               <h2 className="mt-4 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
-                The chat is not beside the platform. It operates the platform.
+                Conversation becomes a reusable project asset.
               </h2>
             </div>
             <p className="max-w-lg text-sm leading-6 text-muted-foreground">
-              Commands become plans, delegated work, visible tools, reusable
-              artifacts, UI intents, and auditable timeline events.
+              Choose a proven template or describe what you need. StoryOps selects
+              one specialist path, records its tools and model, renders the result,
+              and persists it with replayable project evidence.
             </p>
           </div>
           <ConsolePreview />
@@ -1632,19 +1631,22 @@ export function IPFoundryExperience() {
         <CapabilityExplorer />
       </section>
 
-      <section id="atlas" className="border-y bg-muted/20 py-20 lg:py-28">
+      <section id="knowledge-map" className="border-y bg-muted/20 py-20 lg:py-28">
         <div className="mx-auto grid max-w-[1500px] gap-10 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:px-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-              Atlas
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+                Project knowledge map
+              </p>
+              <StatusBadge status="Roadmap" />
+            </div>
             <h2 className="mt-4 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
               See the lineage behind every recommendation.
             </h2>
             <p className="mt-5 text-sm leading-7 text-muted-foreground sm:text-base">
-              Atlas connects source evidence, extracted knowledge, candidate
-              patterns, architecture, repositories, decisions, and impact. A
-              score is never just a number—it has a path.
+              The roadmap knowledge map will connect project evidence, generated
+              assets, decisions, workflow runs, and outcomes. Today, that lineage
+              is available through the implemented timeline and run trace.
             </p>
             <div className="mt-7 space-y-3">
               {[
@@ -1659,7 +1661,7 @@ export function IPFoundryExperience() {
               ))}
             </div>
           </div>
-          <AtlasPreview />
+          <KnowledgeMapPreview />
         </div>
       </section>
 
@@ -1674,16 +1676,17 @@ export function IPFoundryExperience() {
               Ask why. Get evidence, not theater.
             </h2>
             <p className="mt-5 text-sm leading-7 text-muted-foreground sm:text-base">
-              IP Foundry exposes objectives, selected agents, tools, dependencies,
-              confidence factors, intermediate artifacts, retries, and failures.
-              It does not expose private chain-of-thought or invent certainty.
+              StoryOps Studio exposes the objective, selected specialist, persisted
+              tool steps, confidence, model identity, generated assets, replay
+              lineage, and failures. It does not expose private chain-of-thought
+              or invent certainty.
             </p>
             <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               {[
-                ["Evidence", "Source IDs, versions, chunks, and relationship paths."],
-                ["Confidence", "Positive factors, contradictions, freshness, and coverage."],
-                ["Audit", "Provider, model ID, prompt version, tools, cost, and fallbacks."],
-                ["Control", "Approval policy, action receipt, and compensating operation."],
+                ["Evidence", "Owned item, analysis, task, run, event, and artifact references."],
+                ["Confidence", "Coverage-aware confidence with explicit missing evidence."],
+                ["Audit", "Provider, model ID, prompt version, tools, latency, usage, and fallback."],
+                ["Control", "Private storage, replay lineage, and no model-side mutating tools."],
               ].map(([title, detail]) => (
                 <div key={title} className="rounded-2xl border bg-card p-4">
                   <p className="text-sm font-semibold">{title}</p>
@@ -1702,28 +1705,28 @@ export function IPFoundryExperience() {
           <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                Multi-agent operating model
+                Specialist routing model
               </p>
               <h2 className="mt-4 text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
-                A team of specialists, one accountable outcome.
+                The right specialist for each creative job.
               </h2>
               <p className="mt-5 text-sm leading-7 text-muted-foreground">
-                The orchestrator delegates bounded work, specialists publish
-                intermediate artifacts, critics challenge quality, and policy
-                gates control consequential actions.
+                Each run selects one bounded specialist path and the local data
+                views it needs. The run trace records what actually executed
+                without pretending a single model call is an autonomous team.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {([
-                ["Research Agent", "Evidence and external context", Search],
-                ["Extraction Agent", "Entities, claims, and constraints", FileSearch],
-                ["Pattern Agent", "Similarity and reusable methods", GitBranch],
-                ["Architecture Agent", "Systems and dependency design", Layers3],
-                ["Security Auditor", "Risk, policy, and controls", ShieldCheck],
-                ["Impact Analyst", "ROI, adoption, and outcomes", BarChart3],
-                ["Repository Agent", "Code, tests, and packaging", Code2],
+                ["Brief Agent", "Objectives, constraints, and gaps", FileSearch],
+                ["Script Agent", "Hooks, pacing, narrative, and CTA", FileText],
+                ["Asset Agent", "Visual hierarchy and consistency", Boxes],
+                ["Edit Agent", "Scene timing and pacing signals", Activity],
+                ["Feedback Agent", "Reviewer notes into clear tasks", MessageSquare],
+                ["Performance Agent", "Retention, views, and CTR", BarChart3],
+                ["Diagram Architect", "Mermaid architecture and flows", Layers3],
                 ["Technical Writer", "Reports and documentation", FileText],
-                ["Deployment Planner", "Release and operating model", Cloud],
+                ["Visual Designer", "Original generated project visuals", Sparkles],
               ] satisfies Array<[string, string, LucideIcon]>).map(
                 ([name, role, Icon]) => (
                 <article key={String(name)} className="rounded-2xl border bg-card p-4">
@@ -1743,11 +1746,14 @@ export function IPFoundryExperience() {
       <section className="mx-auto max-w-[1500px] px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div className="grid gap-6 lg:grid-cols-3">
           <article className="rounded-3xl border bg-card p-7 lg:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              Business impact model
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Business impact model
+              </p>
+              <StatusBadge status="Roadmap" />
+            </div>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              Measure reuse as an operating outcome.
+              A future evidence model for measuring reuse.
             </h2>
             <div className="mt-8 grid gap-5 sm:grid-cols-3">
               {[
@@ -1777,7 +1783,7 @@ export function IPFoundryExperience() {
               <li>Private assets with signed reads</li>
               <li>Bounded model inputs and outputs</li>
               <li>Provider and fallback audit IDs</li>
-              <li>Approval before consequential tools</li>
+              <li>No model-side mutating tools</li>
             </ul>
           </article>
         </div>
@@ -1837,27 +1843,27 @@ export function IPFoundryExperience() {
                 "Authenticated multi-tenant workspaces",
                 "Creative pipeline and private uploads",
                 "Structured text and vision analysis",
-                "Generated task handoff and model audits",
+                "AI Asset Studio for documents, diagrams, code, and visuals",
               ],
             },
             {
-              label: "Next · Control plane",
+              label: "Current · Control plane",
               status: "V2 foundation" as const,
               items: [
-                "Interactive product experience",
-                "Central operating console",
-                "Conversation, artifact, run, and event records",
-                "Replayable workspace timeline",
+                "Durable conversations and generated asset records",
+                "Reloadable run steps and provider audit metadata",
+                "Evidence-grounded replay lineage",
+                "Application append-only workspace timeline",
               ],
             },
             {
-              label: "Then · Intelligence fabric",
+              label: "Later · Creative intelligence",
               status: "Roadmap" as const,
               items: [
                 "Document parsing and embeddings",
-                "Pattern discovery and duplicate IP",
-                "Atlas knowledge graph",
-                "Repository generation and impact reports",
+                "Pattern discovery and authorized semantic search",
+                "Project knowledge map",
+                "Durable workflow execution and collaboration",
               ],
             },
           ].map((phase) => (
@@ -1887,12 +1893,12 @@ export function IPFoundryExperience() {
                 Start with the deployed platform
               </p>
               <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-[-0.035em] sm:text-5xl">
-                Inspect real agents today. Follow the evolution into IP Foundry.
+                Bring the next creative asset into the same accountable workflow.
               </h2>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-primary-foreground/70">
-                The current release is live end to end. V2 adds the durable
-                conversation, event, artifact, graph, and orchestration primitives
-                required for an enterprise AI operating system.
+                The current release connects specialist analysis, task handoff,
+                rich asset generation, private storage, run traces, and replay
+                lineage in one deployed StoryOps Studio workspace.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 lg:justify-end">
@@ -1921,7 +1927,7 @@ export function IPFoundryExperience() {
             <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Sparkles className="size-3.5" />
             </span>
-            <span>StoryOps Studio · IP Foundry V2 architecture</span>
+            <span>StoryOps Studio · Creative operations and AI Asset Studio</span>
           </div>
           <div className="flex flex-wrap gap-4">
             <a href="#architecture" className="hover:text-foreground">

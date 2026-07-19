@@ -13,7 +13,7 @@ import { toast } from "sonner"
 
 import { NewProjectDialog } from "@/components/dashboard/NewProjectDialog"
 import { Header } from "@/components/shared/Header"
-import { WatsonxStatusBadge } from "@/components/shared/WatsonxStatusBadge"
+import { ProviderStatusBadge } from "@/components/shared/ProviderStatusBadge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -120,7 +120,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-muted/20">
       <Header>
-        <WatsonxStatusBadge />
+        <ProviderStatusBadge />
       </Header>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

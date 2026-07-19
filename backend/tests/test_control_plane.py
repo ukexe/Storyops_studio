@@ -15,7 +15,7 @@ class _ModelClient:
             {
                 "response": (
                     "The workspace has one analyzed script and should resolve its "
-                    "highest-priority recommendation before packaging reusable IP."
+                    "highest-priority recommendation before packaging reusable creative knowledge."
                 ),
                 "confidence": 0.82,
                 "recommended_actions": [
@@ -37,7 +37,7 @@ class _UnavailableModelClient:
 async def _project_with_script(client) -> tuple[str, str]:
     project_response = await client.post(
         "/api/v1/projects/",
-        json={"name": "IP Foundry Control Plane"},
+        json={"name": "StoryOps Studio Control Plane"},
     )
     project_id = project_response.json()["id"]
     item_response = await client.post(
@@ -73,12 +73,16 @@ async def test_console_turn_persists_trace_messages_and_events(client, monkeypat
     payload = response.json()
     assert payload["conversation"]["project_id"] == project_id
     assert payload["user_message"]["role"] == "user"
+    assert payload["user_message"]["run_id"] == payload["run"]["id"]
     assert payload["assistant_message"]["role"] == "assistant"
     assert payload["assistant_message"]["model_id"] == "ibm/granite-3-8b-instruct"
     assert payload["run"]["status"] == "completed"
     assert payload["run"]["progress"] == 100
+    assert payload["run"]["model_id"] == "ibm/granite-3-8b-instruct"
+    assert payload["run"]["prompt_version"] == "storyops-asset-studio-v2"
     assert isinstance(payload["run"]["confidence"], float)
     assert [step["status"] for step in payload["steps"]] == [
+        "completed",
         "completed",
         "completed",
     ]
@@ -102,6 +106,12 @@ async def test_console_turn_persists_trace_messages_and_events(client, monkeypat
     assert "console.turn.started" in event_types
     assert "console.turn.completed" in event_types
 
+    steps_response = await client.get(
+        f"/api/v1/runs/{payload['run']['id']}/steps"
+    )
+    assert steps_response.status_code == 200
+    assert len(steps_response.json()) == 3
+
 
 @pytest.mark.asyncio
 async def test_console_report_becomes_reusable_artifact(client, monkeypatch):
@@ -121,6 +131,10 @@ async def test_console_report_becomes_reusable_artifact(client, monkeypatch):
     assert payload["run"]["run_type"] == "executive_report"
     assert len(payload["steps"]) == 3
     assert payload["artifacts"][0]["type"] == "executive_report"
+    assert payload["artifacts"][0]["format"] == "markdown"
+    assert payload["artifacts"][0]["run_id"] == payload["run"]["id"]
+    assert payload["artifacts"][0]["model_id"] == "ibm/granite-3-8b-instruct"
+    assert len(payload["artifacts"][0]["content_sha256"]) == 64
     assert payload["artifacts"][0]["source_message_id"] == payload[
         "assistant_message"
     ]["id"]
@@ -149,7 +163,7 @@ async def test_console_has_audited_fallback_and_event_cursor(client, monkeypatch
 
     assert response.status_code == 201
     assert response.json()["assistant_message"]["model_id"] == (
-        "storyops/control-plane-rules-v1"
+        "storyops/control-plane-rules-v2"
     )
 
     first_page = await client.get(
@@ -168,6 +182,59 @@ async def test_console_has_audited_fallback_and_event_cursor(client, monkeypatch
     assert second_page.json()["events"][0]["id"] != first_page.json()["events"][0][
         "id"
     ]
+
+
+@pytest.mark.asyncio
+async def test_replay_links_new_run_to_persisted_evidence(client, monkeypatch):
+    project_id, _ = await _project_with_script(client)
+    monkeypatch.setattr(
+        "app.services.control_plane.get_client",
+        lambda: _ModelClient(),
+    )
+    first = await client.post(
+        f"/api/v1/projects/{project_id}/console/turns",
+        json={"message": "Analyze this workspace and recommend the next action."},
+    )
+    assert first.status_code == 201
+    first_payload = first.json()
+    events = (
+        await client.get(f"/api/v1/projects/{project_id}/events")
+    ).json()["events"]
+    source_event = next(
+        event
+        for event in events
+        if event["event_type"] == "console.turn.completed"
+        and event["run_id"] == first_payload["run"]["id"]
+    )
+
+    replay = await client.post(
+        f"/api/v1/projects/{project_id}/console/turns",
+        json={
+            "message": (
+                "Compare the selected run with current evidence and prepare a replay plan."
+            ),
+            "conversation_id": first_payload["conversation"]["id"],
+            "replay_from_run_id": first_payload["run"]["id"],
+            "replay_from_event_id": source_event["id"],
+        },
+    )
+
+    assert replay.status_code == 201
+    replay_payload = replay.json()
+    assert replay_payload["run"]["replayed_from_run_id"] == first_payload["run"]["id"]
+    assert replay_payload["user_message"]["metadata"]["replay_from_run_id"] == (
+        first_payload["run"]["id"]
+    )
+    replay_events = (
+        await client.get(f"/api/v1/projects/{project_id}/events")
+    ).json()["events"]
+    replay_start = next(
+        event
+        for event in replay_events
+        if event["event_type"] == "console.turn.started"
+        and event["run_id"] == replay_payload["run"]["id"]
+    )
+    assert replay_start["causation_id"] == source_event["id"]
 
 
 @pytest.mark.asyncio

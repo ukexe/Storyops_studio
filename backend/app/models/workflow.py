@@ -46,6 +46,12 @@ class WorkflowRun(Base):
         nullable=True,
         index=True,
     )
+    replayed_from_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("workflow_runs.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     run_type: Mapped[str] = mapped_column(String(100), nullable=False)
     objective: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(
@@ -59,6 +65,8 @@ class WorkflowRun(Base):
         default=0,
     )
     current_agent: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    model_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    prompt_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
     confidence: Mapped[Decimal | None] = mapped_column(
         Numeric(4, 3),
         nullable=True,

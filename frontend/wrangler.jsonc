@@ -14,6 +14,10 @@
     "NEXT_PUBLIC_API_URL": "https://storyops-api.ukexe06.workers.dev/api/v1"
   },
   "observability": {
-    "enabled": true
+    "enabled": true,
+    "logs": {
+      "invocation_logs": false,
+      "head_sampling_rate": 1
+    }
   }
 }

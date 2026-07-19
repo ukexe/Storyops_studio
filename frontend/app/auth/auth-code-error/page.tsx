@@ -18,7 +18,9 @@ export default function AuthCodeErrorPage() {
           <div className="mb-3 flex size-11 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <AlertCircle className="size-5" />
           </div>
-          <CardTitle>Confirmation link unavailable</CardTitle>
+          <CardTitle>
+            <h1>Confirmation link unavailable</h1>
+          </CardTitle>
           <CardDescription>
             This link may have expired or already been used. Request a fresh
             confirmation by registering again.

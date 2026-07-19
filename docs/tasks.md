@@ -4,24 +4,47 @@
 > Each task is scoped to ~1 hour of focused work.
 > Tasks within a phase are ordered by dependency. Complete them in order unless marked **parallel-safe**.
 
-## IP Foundry V2 transformation
+## StoryOps Studio V2 transformation
 
 > Detailed architecture:
-> [ip-foundry-v2-architecture.md](ip-foundry-v2-architecture.md)
+> [storyops-v2-control-plane-architecture.md](storyops-v2-control-plane-architecture.md)
+
+### V2.1 AI Asset Studio
+
+- [x] Remove retired branding from source, UI, prompts, docs, and vector assets
+- [x] Add eight guided asset categories and a reusable template catalog
+- [x] Add safe rich Markdown, GFM table, callout, code, and image rendering
+- [x] Add Mermaid diagram/chart rendering with SVG export
+- [x] Add OpenAI image generation with private Storage persistence
+- [x] Add first-class artifact format, media, hash, model, prompt, and run lineage
+- [x] Add reloadable workflow-step API contracts
+- [x] Add explicit replay run/event lineage and grounded replay context
+- [x] Replace raw item metadata JSON with friendly metric and scene views
+- [x] Replace edit/performance JSON entry with guided forms
+- [x] Add responsive authenticated navigation and global error/404 states
+- [x] Bound Worker JSON/upload requests and sanitize data errors
+- [x] Disable automatic invocation logs that may retain authentication headers
+- [x] Correct compound event-cursor pagination
+- [x] Add generated Wrangler type freshness checks
+- [x] Validate the OpenNext Worker artifact in CI
+- [ ] Apply migration `73ff11ca1f26` to production
+- [ ] Deploy and verify API Worker v2.1.0
+- [ ] Deploy and verify frontend Worker v2.1.0
+- [ ] Capture the refreshed production homepage screenshot
 
 ### Implemented in source
 
 - [x] Complete repository, runtime, data, UX, and hackathon-judge audit
-- [x] Define the IP Foundry control-plane architecture without discarding the
+- [x] Define the StoryOps Studio control-plane architecture without discarding the
   working StoryOps creative vertical
 - [x] Replace the commercial landing page with an interactive product experience
 - [x] Add explicit Live / V2 foundation / Roadmap capability maturity labels
 - [x] Add conversations and conversation messages
 - [x] Add workflow runs and transparent workflow steps
 - [x] Add reusable, versioned artifacts
-- [x] Add an append-only workspace event ledger
+- [x] Add an application append-only workspace event history
 - [x] Emit project, item, analysis, task, demo, console, failure, and artifact events
-- [x] Add the authenticated AI operating console
+- [x] Add the authenticated AI Asset Studio foundation
 - [x] Add the searchable, replay-safe enterprise workspace timeline
 - [x] Add matching FastAPI/Granite and Worker/OpenAI contracts
 - [x] Add deterministic, explicitly audited control-plane fallback
@@ -46,7 +69,7 @@
 - [ ] Add retryable embedding jobs and a vector index
 - [ ] Add authorized hybrid semantic search
 - [ ] Add pattern candidates, evidence links, scoring, and duplicate detection
-- [ ] Add Atlas knowledge nodes, edges, and graph projections
+- [ ] Add project knowledge-map nodes, edges, and graph projections
 - [ ] Add approval-aware repository generation in a sandbox
 - [ ] Add impact observations, assumptions, forecasts, and sensitivity ranges
 - [ ] Add workspace memberships, roles, policies, quotas, and collaboration
@@ -492,16 +515,16 @@ populated pipeline with analyses and tasks on three items.
 ### T3.3 — Dashboard page
 **What:** Build the project list dashboard — the first thing a user sees after login.
 
-**Deliverable:** Dashboard shows all user projects as cards. "New Project" modal works. "Seed Demo" button creates a demo project and navigates to it. `WatsonxStatusBadge` shows health.
+**Deliverable:** Dashboard shows all user projects as cards. "New Project" modal works. "Seed Demo" button creates a demo project and navigates to it. `ProviderStatusBadge` shows health.
 
 **Steps:**
-- [x] Create `frontend/components/shared/WatsonxStatusBadge.tsx` — fetches `GET /health`, renders connected/checking/unavailable states, and supports retry
+- [x] Create `frontend/components/shared/ProviderStatusBadge.tsx` — fetches `GET /health`, renders connected/checking/unavailable states, and supports retry
 - [x] Create `frontend/components/shared/Header.tsx` — app name, Dashboard navigation, user email, and sign-out
 - [x] Create `frontend/app/dashboard/page.tsx`:
   - Fetch `getProjects()` on load; render project cards (name, description, item count total, last updated)
   - "New Project" `<Dialog>` with name + description fields; calls `createProject()` on submit; optimistic append to list
   - "Seed Demo" button — calls `seedDemo()`; on success `router.push(`/projects/${project_id}`)` ; show loading state
-  - `WatsonxStatusBadge` in top-right of header
+  - `ProviderStatusBadge` in top-right of header
 - [x] Handle loading, empty, error, retry, expired-session, and mutation states
 
 ---

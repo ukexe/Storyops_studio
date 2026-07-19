@@ -6,6 +6,8 @@ const remotePatterns: NonNullable<
 
 const isDevelopment = process.env.NODE_ENV === "development"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabasePublishableKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 const apiUrl = process.env.NEXT_PUBLIC_API_URL
 const scriptSrc =
   isDevelopment
@@ -15,6 +17,14 @@ const connectSources = new Set(["'self'"])
 const imageSources = new Set(["'self'", "data:", "blob:"])
 if (!supabaseUrl && process.env.NODE_ENV === "production") {
   throw new Error("NEXT_PUBLIC_SUPABASE_URL must be configured before building")
+}
+if (!supabasePublishableKey && process.env.NODE_ENV === "production") {
+  throw new Error(
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be configured before building",
+  )
+}
+if (!apiUrl && process.env.NODE_ENV === "production") {
+  throw new Error("NEXT_PUBLIC_API_URL must be configured before building")
 }
 if (supabaseUrl) {
   try {
@@ -59,6 +69,7 @@ if (!isDevelopment) {
 }
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   images: {
     remotePatterns,
   },

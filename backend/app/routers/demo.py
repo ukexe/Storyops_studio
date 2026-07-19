@@ -32,7 +32,7 @@ DEMO_OWNER_ID = uuid.UUID("00000000-0000-0000-0000-000000000042")
 DEMO_DIR = Path(__file__).resolve().parents[2] / "demo"
 DEMO_PROJECT_NAME = "YouTube Series — AI Explained"
 DEMO_THUMBNAIL_NAME = "sample-thumbnail.jpg"
-DEMO_VERSION = "2026-v1"
+DEMO_VERSION = "2026-v2"
 
 
 class DemoSeedResponse(BaseModel):
