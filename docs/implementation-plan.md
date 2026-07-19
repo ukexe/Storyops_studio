@@ -495,6 +495,7 @@ The demo data in `backend/demo/` must be compelling:
 - [x] Prepare the local `v1.0.0` release commit and annotated tag
 - [x] Push the release tag to GitHub
 - [x] Publish the v1.1.0 GitHub Release
+- [x] Publish the v1.2.0 OpenAI provider release
 - [ ] Add the public demo video URL
 
 **Relevant Context:** `docs/research.md` → IBM Bob Usage Strategy, Demo Script, Judging Strategy, README Structure; IBM Bob evidence is a judging criterion per `AGENTS.md`

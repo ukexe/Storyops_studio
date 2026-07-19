@@ -732,6 +732,8 @@ app and **Seed demo** works end to end.
 - [x] Preserve deterministic fallback and provider-specific audit IDs
 - [x] Update health, Settings, README, architecture, and demo documentation for
   the active provider
+- [x] Publish the
+  [v1.2.0 GitHub Release](https://github.com/ukexe/Storyops_studio/releases/tag/v1.2.0)
 
 **Production status:** Cloudflare frontend/API, Supabase schema/Auth/private
 Storage, OpenAI text/vision analysis, and the complete persisted browser
