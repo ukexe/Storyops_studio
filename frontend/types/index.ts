@@ -84,7 +84,10 @@ export interface HealthResponse {
   status: "ok" | "error"
   database: "unknown" | "connected" | "error"
   watsonx: WatsonxStatus
-  analysis_mode?: "watsonx" | "edge-rules"
+  openai?: "configured" | "unavailable"
+  analysis_mode?: "watsonx" | "openai" | "edge-rules"
+  fallback_mode?: "edge-rules"
+  model_id?: string | null
 }
 
 export interface DemoSeedResponse {

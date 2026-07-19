@@ -2,6 +2,32 @@
 
 All notable changes to StoryOps Studio are documented here.
 
+## [1.2.0] - 2026-07-19
+
+### Added in 1.2
+
+- OpenAI Responses API production provider using `gpt-5.6-luna`
+- Strict structured output for summaries, recommendations, priorities, and
+  score metrics
+- Multimodal thumbnail analysis from trusted private or demo image bytes
+- Provider-aware health, Settings, status badges, and persisted model IDs
+- Deterministic edge fallback on provider timeout, refusal, or invalid output
+
+### 1.2 security
+
+- OpenAI API key stored only as a Cloudflare Worker secret
+- OpenAI API storage disabled with `store: false`
+- Bounded creative content, metadata, image size, output tokens, and timeout
+- Sanitized structured fallback logs without creative content or credentials
+
+### 1.2 validation
+
+- Added mocked structured-output and vision-input provider tests
+- Added production health, text analysis, vision analysis, persistence, and
+  fallback verification
+- Updated challenge documentation to disclose OpenAI and retain IBM Bob as the
+  primary development tool
+
 ## [1.1.0] - 2026-07-19
 
 ### Added

@@ -12,8 +12,8 @@ Confirm the deployed environment:
    - HTTP `200`
    - `status` is `ok`
    - `database` is `connected`
-   - `analysis_mode` is `edge-rules` on the live adapter, or `watsonx` is
-     `connected` on a credentialed FastAPI deployment
+   - `analysis_mode` is `openai` on the live adapter
+   - `model_id` identifies the configured OpenAI model
 3. Open the frontend landing page.
 4. Confirm the frontend deployment URL and `/auth/confirm` are allowed Supabase
    Auth redirect URLs.
@@ -41,8 +41,7 @@ Expected:
 
 - The dashboard loads without a redirect loop.
 - The user email appears in the header.
-- The status badge reports **Edge agents active** on the current production
-  adapter, or **watsonx connected** on the credentialed FastAPI runtime.
+- The status badge reports **OpenAI active**.
 
 ### 2. Seed the judging project
 
@@ -82,8 +81,7 @@ Show:
 - Brief Agent summary
 - Clarity score
 - Missing-information recommendations
-- Explicit `storyops/edge-*` ruleset ID in the live fallback, or fully qualified
-  Granite model ID on FastAPI
+- Explicit `openai/<model>` audit ID
 
 Explain that the agent converts ambiguity into structured production work
 instead of generating the creative concept.
@@ -100,9 +98,9 @@ Show:
 - Retention risk
 - Pacing and improvement recommendations
 
-Granite model output is nondeterministic. Edge fallback output is deterministic;
-in either mode, demonstrate the recommendation structure rather than promising
-an exact task count.
+OpenAI model output is nondeterministic. Edge fallback output is deterministic;
+demonstrate the recommendation structure rather than promising an exact task
+count.
 
 ### 6. Open the asset analysis
 
@@ -116,8 +114,8 @@ Show:
 - Visual issue recommendations
 
 Explain that user uploads are private Supabase objects served with signed URLs.
-The canonical FastAPI Asset Agent downloads private bytes and sends them through
-the centralized watsonx client when IBM credentials are available.
+The production API downloads trusted bytes and sends a low-detail image input
+to the OpenAI Responses API with storage disabled.
 
 ### 7. Show generated tasks
 
@@ -193,12 +191,13 @@ To demonstrate authoring rather than seeding:
 - Confirm backend `SUPABASE_URL` matches the frontend project.
 - Confirm the JWT signing algorithm is RS256 or ES256.
 
-### Demo seed returns `502`
+### An analysis shows a `storyops/edge-*` model ID
 
-- Check `WATSONX_API_KEY`, project ID, region, and model entitlement.
-- Verify `/health` reports watsonx as connected.
-- Check that the Granite text and vision model IDs are available in the
-  configured region.
+- Confirm `OPENAI_API_KEY` exists in the `storyops-api` Worker secrets.
+- Verify `/health` reports `analysis_mode: "openai"`.
+- Confirm `OPENAI_MODEL` names a model available to the OpenAI project.
+- Review structured Worker logs for `openai_analysis_fallback`; logs contain no
+  creative content or credentials.
 
 ### Asset upload or preview fails
 

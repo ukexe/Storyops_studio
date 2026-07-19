@@ -63,7 +63,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StoryOps Studio API",
     description="Agentic AI creative operations platform — IBM AI Builders Challenge 2026",
-    version="1.1.0",
+    version="1.2.0",
     lifespan=lifespan,
     docs_url=None if settings.ENVIRONMENT == "production" else "/docs",
     redoc_url=None if settings.ENVIRONMENT == "production" else "/redoc",

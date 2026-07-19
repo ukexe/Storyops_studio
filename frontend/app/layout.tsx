@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s · StoryOps Studio",
   },
   description:
-    "An AI-powered creative operations command center built with IBM Granite and watsonx.ai.",
+    "An AI-powered creative operations command center built with IBM Bob, OpenAI, and a watsonx-ready agent architecture.",
 };
 
 export default function RootLayout({

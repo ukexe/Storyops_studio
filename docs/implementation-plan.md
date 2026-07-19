@@ -7,7 +7,7 @@
 
 ## Top-Level Overview
 
-StoryOps Studio is an agentic AI platform that turns fragmented creative production workflows into a unified, insight-driven pipeline. Users bring briefs, scripts, and asset files into a **Kanban pipeline view** (Idea → Script → Assets → Edit → Feedback → Publish → Analyze). Specialized IBM Granite agents analyze each item and emit structured recommendations and auto-generated tasks.
+StoryOps Studio is an agentic AI platform that turns fragmented creative production workflows into a unified, insight-driven pipeline. Users bring briefs, scripts, and asset files into a **Kanban pipeline view** (Idea → Script → Assets → Edit → Feedback → Publish → Analyze). Specialized agents use OpenAI in production, retain a canonical IBM Granite implementation, and emit structured recommendations and auto-generated tasks.
 
 **Judging criteria and how the MVP directly addresses each:**
 
@@ -15,9 +15,9 @@ StoryOps Studio is an agentic AI platform that turns fragmented creative product
 |---|---|
 | Innovation | Multi-agent creative ops platform, not just an asset generator |
 | Challenge Fit | Directly reimagines creative team workflows end-to-end |
-| Technical Execution | FastAPI + Next.js + Granite via watsonx.ai, fully deployed |
+| Technical Execution | Next.js + Cloudflare API + OpenAI live; FastAPI/watsonx path retained |
 | Real-world Impact | Briefs, scripts, thumbnails analyzed with actionable tasks |
-| IBM Ecosystem Alignment | Bob as SDLC partner, Granite for reasoning and vision |
+| IBM Ecosystem Alignment | IBM Bob as primary SDLC partner; Granite integration retained |
 | Demo WOW Factor | One-click demo seed loads a full project with AI insights |
 
 **MVP scope:**
@@ -50,11 +50,11 @@ StoryOps Studio is an agentic AI platform that turns fragmented creative product
 | ORM | SQLAlchemy 2.0 (async) + Alembic | Type-safe, migration-managed |
 | Database | Supabase (PostgreSQL) | Free tier, Auth + Storage included |
 | Auth | Supabase Auth (JWT) | Publishable key on frontend; secret key on backend |
-| AI Models | IBM Granite via watsonx.ai | `granite-3-8b-instruct` for text; Granite Vision for images |
+| AI Models | OpenAI production + IBM Granite canonical path | `gpt-5.6-luna` live; Granite Instruct/Vision in FastAPI |
 | File Storage | Supabase Storage | Asset uploads (thumbnails, script PDFs) |
 | CI/CD | GitHub Actions | Lint + type-check on push; no auto-deploy needed for hackathon |
 | Frontend Deploy | Cloudflare Workers | OpenNext + Wrangler |
-| Backend Deploy | Cloudflare Worker live adapter + Render Blueprint | Edge REST contract now; Python/Granite runtime when credentials and host are available |
+| Backend Deploy | Cloudflare Worker live adapter + Render Blueprint | OpenAI live inference; Python/Granite runtime when credentials and host are available |
 
 ---
 
@@ -532,14 +532,16 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ## Key Constraints & Gotchas
 
 1. **`stage` on `items` is a validated string, not a FK** — validated against `PIPELINE_STAGES` constant in the Pydantic schema. Never stored as a row in a `stages` table.
-2. **Analysis is synchronous** — `POST /items/{id}/analyze` blocks until Granite responds (3–8s). Frontend shows a spinner; no polling or job IDs.
+2. **Analysis is synchronous** — `POST /items/{id}/analyze` blocks until the
+   active provider responds. The frontend shows a spinner; no polling or job
+   IDs.
 3. **`analyses.recommendations` must be a JSON array** — always `[{title, detail, priority}]`. The frontend renders from this structure; plain text will break the UI.
 4. **Granite model IDs must be fully qualified** — e.g., `ibm/granite-3-8b-instruct`. Never use short aliases.
 5. **Use the Supabase session pooler on port 5432** — the canonical FastAPI
    deployment uses the least-privilege `storyops_app` runtime role; the live
    edge adapter uses Supabase REST instead of a database password.
 6. **IBM Bob usage must be visibly evidenced** — reference Bob's role in planning, scaffolding, and docs in `docs/architecture.md` and README. This is a judging criterion.
-7. **Demo seed is authenticated and idempotent** — the live adapter records
-   explicit edge-rules IDs. Deploy the canonical FastAPI service with valid
-   `WATSONX_*` values to demonstrate real Granite inference.
+7. **Demo seed is authenticated and idempotent** — the live adapter runs OpenAI
+   text and vision analysis, records `openai/<model>` IDs, and falls back to
+   explicit edge-rules IDs.
 8. **Asset Agent requires image bytes, not a URL** — `AssetAgent` fetches the image from Supabase Storage and `watsonx_client.analyze_image()` base64-encodes it before calling the Granite Vision API.

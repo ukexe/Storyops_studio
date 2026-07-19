@@ -1,4 +1,4 @@
-# StoryOps Studio v1.1.0 engineering report
+# StoryOps Studio v1.2.0 engineering report
 
 ## Executive result
 
@@ -50,6 +50,9 @@ contract and referenced an unmigrated table.
 - Added private asset paths, signed reads, secret-key downloads, and cleanup.
 - Added a Cloudflare Worker deployment adapter implementing the complete REST
   contract through Supabase Auth, PostgREST, and Storage.
+- Added disclosed OpenAI Responses API text and vision analysis with strict
+  structured output, provider audit IDs, bounded requests, and API storage
+  disabled.
 - Added deterministic edge agents for every item type with explicit
   `storyops/edge-*` audit IDs.
 
@@ -132,12 +135,14 @@ Canonical FastAPI:
 
 Live Cloudflare adapter:
 
-- Deterministic Brief, Script, Asset, Edit, Performance, and Feedback agents
+- OpenAI Brief, Script, Asset, Edit, Performance, and Feedback agents
 - Structured recommendations, scores, generated tasks, deduplication, and
-  explicit edge-rules audit IDs
+  explicit `openai/<model>` audit IDs
+- Deterministic edge-rules fallback on provider timeout, refusal, invalid
+  output, or service failure
 
-The production fallback is intentionally disclosed by `/health`, Settings, the
-header badge, and every analysis `model_id`.
+The active provider and fallback are intentionally disclosed by `/health`,
+Settings, the header badge, and every analysis `model_id`.
 
 ## Dependencies added or changed
 
@@ -149,7 +154,7 @@ header badge, and every analysis `model_id`.
 
 - Python Ruff: pass
 - FastAPI tests: 33 tests after final schema validation updates
-- Edge API tests: 3 pass
+- Edge API tests: 5 pass
 - Frontend tests: 3 pass
 - FastAPI and edge TypeScript type-checks: pass
 - Frontend route-aware type-check: pass
@@ -161,6 +166,10 @@ header badge, and every analysis `model_id`.
 - Linux Node 22.13 OpenNext build: pass
 - Cloudflare API and frontend deployments: pass
 - Production API/auth/private-asset smoke tests: pass
+- Real OpenAI text analysis: pass with `openai/gpt-5.6-luna`
+- Real OpenAI private-asset vision analysis: pass
+- OpenAI demo seed: pass with three provider-backed analyses
+- Deliberate provider-input failure: deterministic fallback pass
 - Full production browser journey: pass
 
 The native Windows Next.js build occasionally exits with an upstream Turbopack
@@ -188,6 +197,8 @@ Cloudflare runtime.
 - The live adapter validates each bearer token with Supabase Auth.
 - Tenant ownership is checked on every application resource.
 - Asset uploads use magic-byte validation and a 10 MB limit.
+- OpenAI receives bounded inputs with `store: false`; its API key is confined to
+  a Cloudflare Worker secret.
 - CSP, HSTS, frame denial, referrer policy, permissions policy, and exact CORS
   are enabled.
 - Secret history scanning and dependency audits run in CI.
@@ -207,16 +218,15 @@ Updated:
 
 ## Remaining external work
 
-1. Replace placeholder IBM API key/project ID values with valid watsonx.ai
-   credentials and deploy the canonical FastAPI service to demonstrate real
-   Granite inference in production.
+1. Optionally obtain watsonx.ai credentials and deploy the canonical FastAPI
+   service to demonstrate the retained Granite provider path.
 2. Publish the public demo video URL.
 3. Exercise a real email-delivery confirmation link with an inbox under the
    final project domain.
 
 These are account/credential or submission-media gates, not missing repository
-implementations. The current production experience remains functional through
-explicit deterministic edge agents.
+implementations. The current production experience uses disclosed OpenAI
+inference with explicit deterministic fallback.
 
 ## IBM AI Builders Challenge readiness
 
@@ -228,9 +238,8 @@ Strengths:
 - Extensive Bob planning/agent/review artifacts
 - Strong architecture, CI, security, and reproducible documentation
 
-Primary judging risk:
+Provider disclosure:
 
-- The live deployment cannot truthfully claim Granite execution until valid IBM
-  credentials are supplied. The repository contains the real watsonx
-  implementation and clearly labels the current fallback, avoiding misleading
-  model attribution.
+- IBM Bob remains the primary SDLC tool. OpenAI is the disclosed additional AI
+  provider allowed by the published FAQ. The repository retains the real
+  watsonx implementation without claiming it is active in production.

@@ -108,7 +108,7 @@ export default function Home() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-sm text-muted-foreground">
             <Bot className="size-4" />
-            Powered by IBM Granite and watsonx.ai
+            Built with IBM Bob · OpenAI analysis · watsonx-ready
           </div>
           <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl lg:text-7xl">
             Run creative production as one intelligent workflow.
@@ -285,7 +285,7 @@ export default function Home() {
 
       <footer className="border-t">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p>StoryOps Studio · Creative operations with IBM Granite</p>
+          <p>StoryOps Studio · Agentic creative operations</p>
           <div className="flex gap-4">
             <Link href="/login" className="hover:text-foreground">
               Dashboard

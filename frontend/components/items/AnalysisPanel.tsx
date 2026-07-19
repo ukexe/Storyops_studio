@@ -123,7 +123,7 @@ export function AnalysisPanel({
                 aria-live="polite"
               >
                 <Spinner />
-                Re-analyzing with IBM Granite…
+                Re-running the assigned StoryOps agent…
               </div>
             ) : null}
 

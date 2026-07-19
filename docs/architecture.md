@@ -1,6 +1,6 @@
 # StoryOps Studio Architecture
 
-> Release architecture for StoryOps Studio v1.1.0.
+> Release architecture for StoryOps Studio v1.2.0.
 
 ## System architecture
 
@@ -20,13 +20,14 @@ Cloudflare Workers — Next.js 16 through OpenNext
 Cloudflare Worker — production REST adapter
   ├─ Supabase session validation and project ownership checks
   ├─ Project, item, analysis, task, and demo routes
+  ├─ OpenAI structured text and vision analysis
   ├─ Deterministic edge-agent fallback
   └─ Supabase PostgREST and private Storage client
-  │
-  ▼
-Supabase Postgres
-  ├─ projects              ├─ Granite Instruct
-  ├─ items                 └─ Granite Vision
+  │                              │
+  ▼                              ▼
+Supabase Postgres          OpenAI Responses API
+  ├─ projects
+  ├─ items
   ├─ analyses
   └─ tasks
 
@@ -63,7 +64,7 @@ can access the four application tables.
 - `/` — public product landing page.
 - `/login` and `/register` — Supabase email/password authentication.
 - `/auth/confirm` — email OTP or PKCE confirmation callback.
-- `/dashboard` — project list, project creation, demo seed, and watsonx health.
+- `/dashboard` — project list, project creation, demo seed, and provider health.
 - `/projects/[id]` — seven-stage pipeline.
 - `/projects/[id]/items/[itemId]` — content preview and AI analysis.
 - `/projects/[id]/tasks` — AI-generated task board.
@@ -102,9 +103,10 @@ polite live announcements.
 `backend/cloudflare/src/index.ts` is the live API implementation. It preserves
 the FastAPI response contract while using Supabase Auth, PostgREST, and Storage
 from a standard Cloudflare Worker. Every resource lookup includes an ownership
-check. Its deterministic analyses are labeled with `storyops/edge-*` ruleset
-IDs, and `/health` reports `analysis_mode: "edge-rules"` rather than
-misrepresenting them as Granite output.
+check. OpenAI analyses use strict structured output and `openai/<model>` audit
+IDs. Inference failures activate deterministic `storyops/edge-*` rules and are
+logged without exposing creative input or credentials. `/health` and Settings
+report the active provider and fallback mode.
 
 ### Canonical FastAPI service
 
@@ -159,7 +161,23 @@ analyze(item) → AnalysisResult
 score metrics, model ID, and task drafts. Agents are stateless and receive the
 complete persisted item context.
 
-### Agent reference
+### Production OpenAI provider
+
+The live adapter uses `gpt-5.6-luna` through the OpenAI Responses API:
+
+- strict JSON Schema output for summaries, recommendations, priorities, and
+  metrics;
+- text analysis for briefs, scripts, edits, feedback, and performance data;
+- low-detail multimodal input for private user assets and the demo thumbnail;
+- `store: false`, bounded content/metadata/output, a 60-second deadline, and
+  no model tools;
+- application-side output validation and capped task generation; and
+- deterministic rules fallback with a different audit ID on any provider error.
+
+Creative input is sent to OpenAI only when the provider is configured. The API
+key remains a Cloudflare Worker secret and never reaches the browser.
+
+### Canonical FastAPI agent reference
 
 - `WatsonxClient` — lazy singleton around IBM `ModelInference`; caches model
   interfaces, bounds concurrent inference, applies a request deadline, and
@@ -169,7 +187,7 @@ complete persisted item context.
 - `ScriptAgent` — Granite Instruct analysis of hook strength, pacing, CTA, and
   retention risk.
 - `AssetAgent` — Granite Vision analysis of brand consistency and logo
-  integrity. Asset downloads are restricted to the configured Supabase public
+  integrity. Asset downloads are restricted to the configured Supabase private
   bucket.
 - `EditAgent` — deterministic scene-duration and pacing analysis from NLE
   metadata.
@@ -253,9 +271,10 @@ public URLs only from the configured Supabase host without redirects.
 
 - Cloudflare Worker configuration: `backend/cloudflare/wrangler.jsonc`.
 - Live API: `https://storyops-api.ukexe06.workers.dev`.
-- Backend-only Supabase secret configured as a Worker secret.
-- Deterministic fallback agents keep every workflow functional without
-  claiming unavailable IBM inference.
+- Backend-only Supabase and OpenAI keys configured as Worker secrets.
+- `gpt-5.6-luna` provides production text and vision analysis.
+- Deterministic fallback agents keep every workflow functional and use
+  visibly different model IDs.
 
 ### Canonical FastAPI backend
 
@@ -281,9 +300,10 @@ public URLs only from the configured Supabase host without redirects.
 
 - Database startup failure: API process remains observable through `/live`, but
   `/health` returns `503`.
-- watsonx unavailable: the live adapter explicitly reports `edge-rules` mode;
-  the canonical FastAPI service keeps CRUD healthy and returns a sanitized
-  gateway error for Granite-only requests.
+- OpenAI unavailable: the live adapter logs a sanitized provider failure,
+  persists deterministic analysis, and records a `storyops/edge-*` model ID.
+- watsonx unavailable: the canonical FastAPI service keeps CRUD healthy and
+  returns a sanitized gateway error for Granite-only requests.
 - Invalid model JSON: no analysis or tasks are committed.
 - Demo seed failure: the database transaction is rolled back and the uploaded
   demo thumbnail is cleaned up.
@@ -309,8 +329,9 @@ tool. Repository evidence is organized by Bob's three modes:
 
 - Phase work is represented by production source, migrations, tests, Docker,
   Cloudflare, Render, and CI artifacts.
-- `.bob/rules-agent/AGENTS.md` constrains Granite access, model IDs, pipeline
-  ordering, recommendation shape, and dispatch separation.
+- `.bob/rules-agent/AGENTS.md` constrains provider disclosure, server-side
+  secrets, Granite access, model IDs, pipeline ordering, recommendation shape,
+  and dispatch separation.
 
 ### Ask mode
 
@@ -328,7 +349,8 @@ where required by the judging rules.
 
 - Public: landing page, auth pages, `/live`, and `/health`.
 - Authenticated: projects, items, analyses, tasks, and demo seeding.
-- Secret: Supabase secret key, database URL, and watsonx credentials.
+- Secret: Supabase secret key, OpenAI key, database URL, and watsonx
+  credentials.
 - Browser-visible by design: Supabase project URL, publishable key, and backend
   API URL.
 

@@ -39,6 +39,7 @@ export default function SettingsPage() {
   }, [loadHealth])
 
   const edgeFallback = health?.analysis_mode === "edge-rules"
+  const openAIActive = health?.analysis_mode === "openai"
 
   return (
     <div className="min-h-screen bg-muted/20">
@@ -86,14 +87,18 @@ export default function SettingsPage() {
             icon={<BrainCircuit />}
             title="Analysis runtime"
             status={
-              edgeFallback
+              openAIActive
+                ? "OpenAI"
+                : edgeFallback
                 ? "Edge agents"
                 : health?.watsonx === "connected"
                   ? "IBM Granite"
                   : "Checking"
             }
             detail={
-              edgeFallback
+              openAIActive
+                ? `${health?.model_id ?? "OpenAI"} is active with deterministic edge fallback. Creative inputs are sent with API storage disabled.`
+                : edgeFallback
                 ? "Deterministic fallback agents are active and explicitly audited."
                 : "The canonical watsonx.ai agent runtime is active."
             }

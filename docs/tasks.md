@@ -529,7 +529,7 @@ populated pipeline with analyses and tasks on three items.
 - [x] Create `frontend/components/items/AnalysisPanel.tsx`:
   - Props: `analysis: Analysis | null`, `isAnalyzing: boolean`, `onAnalyze: () => void`
   - When `analysis === null` and not analyzing: show "No analysis yet" + "Analyze" button
-  - When `isAnalyzing`: show spinner + "Analyzing with IBM Granite..."
+  - When `isAnalyzing`: show spinner + provider-neutral StoryOps agent status
   - When `analysis` present:
     - Summary text block
     - Score metrics: render each `score_metrics` key-value pair as a `<Badge variant="outline">` — e.g., `hook_strength: 4`
@@ -727,11 +727,16 @@ app and **Seed demo** works end to end.
 - [x] Publish the
   [v1.1.0 GitHub Release](https://github.com/ukexe/Storyops_studio/releases/tag/v1.1.0)
 - [ ] Add the public demo video URL to README and release notes
+- [x] Add a disclosed OpenAI production provider with structured text and
+  vision outputs
+- [x] Preserve deterministic fallback and provider-specific audit IDs
+- [x] Update health, Settings, README, architecture, and demo documentation for
+  the active provider
 
 **Production status:** Cloudflare frontend/API, Supabase schema/Auth/private
-Storage, and the complete persisted browser journey are verified. Real Granite
-inference remains gated only by valid IBM credentials; production explicitly
-uses and labels deterministic edge-agent mode.
+Storage, OpenAI text/vision analysis, and the complete persisted browser
+journey are verified. Every analysis labels either its OpenAI, Granite, or
+deterministic rules provider.
 
 ---
 

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { getHealth } from "@/lib/api"
 import type { WatsonxStatus } from "@/types"
 
-type BadgeState = WatsonxStatus | "checking" | "fallback"
+type BadgeState = WatsonxStatus | "checking" | "fallback" | "openai"
 
 export function WatsonxStatusBadge() {
   const [state, setState] = useState<BadgeState>("checking")
@@ -16,7 +16,11 @@ export function WatsonxStatusBadge() {
     try {
       const health = await getHealth(signal)
       setState(
-        health.analysis_mode === "edge-rules" ? "fallback" : health.watsonx,
+        health.analysis_mode === "openai"
+          ? "openai"
+          : health.analysis_mode === "edge-rules"
+            ? "fallback"
+            : health.watsonx,
       )
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
@@ -46,12 +50,25 @@ export function WatsonxStatusBadge() {
     )
   }
 
+  if (state === "openai") {
+    return (
+      <Badge
+        variant="outline"
+        className="gap-1.5 text-emerald-700"
+        title="OpenAI is the active production analysis provider."
+      >
+        <CircleCheck className="size-3.5" />
+        OpenAI active
+      </Badge>
+    )
+  }
+
   if (state === "fallback") {
     return (
       <Badge
         variant="outline"
         className="gap-1.5 text-amber-700"
-        title="Deterministic agents are active; configure watsonx credentials for Granite inference."
+        title="Deterministic agents are active because no hosted model provider is configured."
       >
         <CircleCheck className="size-3.5" />
         Edge agents active
@@ -63,7 +80,7 @@ export function WatsonxStatusBadge() {
     return (
       <Badge variant="outline" className="gap-1.5 text-muted-foreground">
         <LoaderCircle className="size-3.5 animate-spin" />
-        Checking watsonx
+        Checking AI runtime
       </Badge>
     )
   }
@@ -75,11 +92,11 @@ export function WatsonxStatusBadge() {
         setState("checking")
         void checkHealth()
       }}
-      aria-label="Retry watsonx connectivity check"
+      aria-label="Retry AI provider connectivity check"
     >
       <Badge variant="outline" className="gap-1.5 text-amber-700">
         <CircleAlert className="size-3.5" />
-        watsonx unavailable
+        AI provider unavailable
       </Badge>
     </button>
   )

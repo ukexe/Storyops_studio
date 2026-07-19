@@ -12,7 +12,8 @@
   ],
   "vars": {
     "SUPABASE_URL": "https://namuaqfivfwopaqkdjuw.supabase.co",
-    "CORS_ORIGINS": "https://storyops.ukexe06.workers.dev"
+    "CORS_ORIGINS": "https://storyops.ukexe06.workers.dev",
+    "OPENAI_MODEL": "gpt-5.6-luna"
   },
   "observability": {
     "enabled": true
