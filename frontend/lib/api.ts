@@ -2,6 +2,11 @@ import { getPublicEnv } from "@/lib/env"
 import { createClient as createSupabaseClient } from "@/utils/supabase/client"
 import type {
   Analysis,
+  Artifact,
+  ConsoleTurnInput,
+  ConsoleTurnResponse,
+  Conversation,
+  ConversationMessage,
   DemoSeedResponse,
   HealthResponse,
   Item,
@@ -14,6 +19,8 @@ import type {
   Task,
   TaskStatus,
   TaskUpdateInput,
+  WorkflowRun,
+  WorkspaceEventPage,
 } from "@/types"
 
 const API_BASE_URL = getPublicEnv().apiUrl
@@ -266,4 +273,69 @@ export function getHealth(signal?: AbortSignal) {
 
 export function seedDemo() {
   return apiRequest<DemoSeedResponse>("/demo/seed", { method: "POST" })
+}
+
+export function createConsoleTurn(
+  projectId: string,
+  input: ConsoleTurnInput,
+) {
+  return apiRequest<ConsoleTurnResponse>(
+    `/projects/${encodeURIComponent(projectId)}/console/turns`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  )
+}
+
+export function getProjectConversations(
+  projectId: string,
+  signal?: AbortSignal,
+) {
+  return apiRequest<Conversation[]>(
+    `/projects/${encodeURIComponent(projectId)}/conversations`,
+    { signal },
+  )
+}
+
+export function getConversationMessages(
+  conversationId: string,
+  signal?: AbortSignal,
+) {
+  return apiRequest<ConversationMessage[]>(
+    `/conversations/${encodeURIComponent(conversationId)}/messages`,
+    { signal },
+  )
+}
+
+export function getProjectArtifacts(
+  projectId: string,
+  signal?: AbortSignal,
+) {
+  return apiRequest<Artifact[]>(
+    `/projects/${encodeURIComponent(projectId)}/artifacts`,
+    { signal },
+  )
+}
+
+export function getProjectWorkflowRuns(
+  projectId: string,
+  signal?: AbortSignal,
+) {
+  return apiRequest<WorkflowRun[]>(
+    `/projects/${encodeURIComponent(projectId)}/runs`,
+    { signal },
+  )
+}
+
+export function getWorkspaceEvents(
+  projectId: string,
+  cursor?: string | null,
+  signal?: AbortSignal,
+) {
+  const search = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""
+  return apiRequest<WorkspaceEventPage>(
+    `/projects/${encodeURIComponent(projectId)}/events${search}`,
+    { signal },
+  )
 }

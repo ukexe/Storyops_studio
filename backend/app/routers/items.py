@@ -21,6 +21,7 @@ from app.models.analysis import Analysis
 from app.models.item import Item
 from app.models.project import Project
 from app.schemas.item import ItemCreate, ItemResponse, ItemUpdate
+from app.services.workspace_events import record_workspace_event
 from app.storage import (
     create_signed_asset_url,
     delete_asset_url,
@@ -292,6 +293,24 @@ async def create_item(
         item_metadata=body.metadata,
     )
     db.add(item)
+    await db.flush()
+    await record_workspace_event(
+        db,
+        project_id=project_id,
+        actor_id=uuid.UUID(user["user_id"]),
+        event_type="item.created",
+        source="user",
+        object_type="item",
+        object_id=item.id,
+        title=f"Added {item.title} to {item.stage}",
+        summary=f"Created a {item.type} pipeline item.",
+        payload={
+            "stage": item.stage,
+            "type": item.type,
+            "has_content": bool(item.content),
+            "has_asset": bool(item.file_url),
+        },
+    )
     await db.commit()
     await db.refresh(item)
     return await _item_response(item)
@@ -323,11 +342,29 @@ async def update_item(
     await _get_project_for_user(item.project_id, user["user_id"], db)
 
     update_data = body.model_dump(exclude_unset=True)
+    previous: dict[str, object] = {}
     for field, value in update_data.items():
         # ItemUpdate uses `metadata` field name but ORM uses `item_metadata`
         orm_field = "item_metadata" if field == "metadata" else field
+        previous[field] = getattr(item, orm_field)
         setattr(item, orm_field, value)
 
+    await record_workspace_event(
+        db,
+        project_id=item.project_id,
+        actor_id=uuid.UUID(user["user_id"]),
+        event_type="item.updated",
+        source="user",
+        object_type="item",
+        object_id=item.id,
+        title=f"Updated {item.title}",
+        payload={
+            "before": previous,
+            "after": update_data,
+            "changed_fields": list(update_data),
+        },
+        is_reversible=bool(update_data),
+    )
     await db.commit()
     await db.refresh(item)
     return await _item_response(item, await _get_latest_analysis(item.id, db))
@@ -338,10 +375,26 @@ async def update_item(
 # ---------------------------------------------------------------------------
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_item(item_id: uuid.UUID, db: DB, user: CurrentUser) -> None:
-    """Hard-delete an item and its analyses/tasks."""
+    """Hard-delete an item and its analyses; linked tasks remain unlinked."""
     item = await _get_item_with_analysis(item_id, db)
     await _get_project_for_user(item.project_id, user["user_id"], db)
     file_url = item.file_url
+    await record_workspace_event(
+        db,
+        project_id=item.project_id,
+        actor_id=uuid.UUID(user["user_id"]),
+        event_type="item.deleted",
+        source="user",
+        object_type="item",
+        object_id=item.id,
+        title=f"Deleted {item.title}",
+        summary=f"Removed a {item.type} item from {item.stage}.",
+        payload={
+            "title": item.title,
+            "stage": item.stage,
+            "type": item.type,
+        },
+    )
     await db.delete(item)
     await db.commit()
     if file_url:

@@ -182,7 +182,14 @@ export function AddItemSheet({
               <Select
                 value={type}
                 onValueChange={(value) => {
-                  setType(value as ItemType)
+                  const nextType = value as ItemType
+                  setType(nextType)
+                  if (nextType !== "asset") {
+                    setFile(null)
+                  }
+                  if (nextType === "asset") {
+                    setContent("")
+                  }
                   setError(null)
                 }}
                 disabled={isSubmitting}

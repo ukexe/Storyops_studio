@@ -15,6 +15,7 @@ from app.database import get_db
 from app.models.item import Item
 from app.models.project import Project
 from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
+from app.services.workspace_events import record_workspace_event
 from app.storage import delete_asset_url
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -115,6 +116,19 @@ async def create_project(body: ProjectCreate, db: DB, user: CurrentUser) -> Proj
         repo_url=body.repo_url,
     )
     db.add(project)
+    await db.flush()
+    await record_workspace_event(
+        db,
+        project_id=project.id,
+        actor_id=uuid.UUID(user["user_id"]),
+        event_type="project.created",
+        source="user",
+        object_type="project",
+        object_id=project.id,
+        title=f"Created project {project.name}",
+        summary=project.description,
+        payload={"name": project.name, "repo_url": project.repo_url},
+    )
     await db.commit()
     await db.refresh(project)
     return _project_response(project)
@@ -136,9 +150,26 @@ async def update_project(
     project = await _get_owned_project(project_id, user["user_id"], db)
 
     update_data = body.model_dump(exclude_unset=True)
+    previous = {field: getattr(project, field) for field in update_data}
     for field, value in update_data.items():
         setattr(project, field, value)
 
+    await record_workspace_event(
+        db,
+        project_id=project.id,
+        actor_id=uuid.UUID(user["user_id"]),
+        event_type="project.updated",
+        source="user",
+        object_type="project",
+        object_id=project.id,
+        title=f"Updated project {project.name}",
+        payload={
+            "before": previous,
+            "after": update_data,
+            "changed_fields": list(update_data),
+        },
+        is_reversible=bool(update_data),
+    )
     await db.commit()
     await db.refresh(project)
     return _project_response(project, await _get_item_counts(project_id, db))

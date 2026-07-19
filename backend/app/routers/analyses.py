@@ -17,6 +17,7 @@ from app.models.item import Item
 from app.models.project import Project
 from app.rate_limit import enforce_rate_limit
 from app.schemas.analysis import AnalysisResponse
+from app.services.workspace_events import record_workspace_event
 
 router = APIRouter(tags=["analyses"])
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ async def list_analyses(
     result = await db.execute(
         select(Analysis)
         .where(Analysis.item_id == item_id)
-        .order_by(Analysis.created_at.desc())
+        .order_by(Analysis.created_at.desc(), Analysis.id.desc())
     )
     analyses = result.scalars().all()
     return [AnalysisResponse.model_validate(a) for a in analyses]
@@ -74,7 +75,27 @@ async def analyze_item(
     )
     item = await _get_owned_item(item_id, user["user_id"], db)
     try:
-        analysis = await dispatch(item, db)
+        analysis = await dispatch(item, db, commit=False)
+        await record_workspace_event(
+            db,
+            project_id=item.project_id,
+            actor_id=uuid.UUID(user["user_id"]),
+            event_type="analysis.completed",
+            source="agent",
+            object_type="analysis",
+            object_id=analysis.id,
+            title=f"{analysis.agent_type.title()} analysis completed",
+            summary=analysis.summary,
+            payload={
+                "item_id": str(item.id),
+                "item_title": item.title,
+                "recommendation_count": len(analysis.recommendations),
+                "score_metrics": analysis.score_metrics,
+            },
+            model_id=analysis.model_id,
+        )
+        await db.commit()
+        await db.refresh(analysis)
     except WatsonxError as exc:
         logger.warning("watsonx.ai analysis failed for item %s: %s", item_id, exc)
         raise HTTPException(

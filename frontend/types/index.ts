@@ -126,3 +126,154 @@ export interface TaskUpdateInput {
   status?: TaskStatus
   priority?: Priority
 }
+
+export type ConversationStatus = "active" | "archived"
+export type MessageRole = "user" | "assistant" | "tool" | "system"
+export type WorkflowRunStatus =
+  | "queued"
+  | "running"
+  | "paused"
+  | "waiting_approval"
+  | "completed"
+  | "failed"
+  | "cancelled"
+export type WorkflowStepStatus =
+  | "pending"
+  | "running"
+  | "waiting_approval"
+  | "completed"
+  | "failed"
+  | "skipped"
+export type ArtifactStatus = "draft" | "ready" | "approved" | "archived"
+export type WorkspaceEventSource =
+  | "user"
+  | "agent"
+  | "tool"
+  | "workflow"
+  | "system"
+
+export interface Conversation {
+  id: string
+  project_id: string
+  owner_id: string
+  title: string
+  status: ConversationStatus
+  context: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface ToolCallReceipt {
+  name: string
+  status: string
+  sequence: number
+}
+
+export interface ConversationMessage {
+  id: string
+  conversation_id: string
+  run_id: string | null
+  role: MessageRole
+  content: string
+  agent_type: string | null
+  model_id: string | null
+  tool_calls: ToolCallReceipt[]
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
+export interface WorkflowRun {
+  id: string
+  project_id: string
+  conversation_id: string | null
+  run_type: string
+  objective: string
+  status: WorkflowRunStatus
+  progress: number
+  current_agent: string | null
+  confidence: number | null
+  error: string | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export interface WorkflowStep {
+  id: string
+  run_id: string
+  sequence: number
+  agent_type: string
+  tool_name: string | null
+  status: WorkflowStepStatus
+  input_data: Record<string, unknown>
+  output_data: Record<string, unknown>
+  confidence: number | null
+  dependencies: string[]
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export interface Artifact {
+  id: string
+  project_id: string
+  conversation_id: string | null
+  source_message_id: string | null
+  type: string
+  title: string
+  content: string
+  metadata: Record<string, unknown>
+  status: ArtifactStatus
+  version: number
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkspaceEvent {
+  id: string
+  project_id: string
+  actor_id: string | null
+  run_id: string | null
+  artifact_id: string | null
+  causation_id: string | null
+  correlation_id: string
+  event_type: string
+  source: WorkspaceEventSource
+  object_type: string
+  object_id: string | null
+  title: string
+  summary: string | null
+  payload: Record<string, unknown>
+  model_id: string | null
+  is_reversible: boolean
+  created_at: string
+}
+
+export interface WorkspaceEventPage {
+  events: WorkspaceEvent[]
+  next_cursor: string | null
+}
+
+export interface UIIntent {
+  type: "navigate" | "highlight" | "refresh"
+  target: string
+  label: string
+  metadata: Record<string, unknown>
+}
+
+export interface ConsoleTurnInput {
+  message: string
+  conversation_id?: string | null
+  context?: Record<string, unknown>
+}
+
+export interface ConsoleTurnResponse {
+  conversation: Conversation
+  user_message: ConversationMessage
+  assistant_message: ConversationMessage
+  run: WorkflowRun
+  steps: WorkflowStep[]
+  artifacts: Artifact[]
+  ui_intents: UIIntent[]
+  recommended_actions: string[]
+}

@@ -1,4 +1,8 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js"
+import {
+  appendWorkspaceEvent,
+  executeConsoleTurn,
+} from "./control-plane"
 import { DEMO_THUMBNAIL_BASE64 } from "./demo-thumbnail"
 
 export interface WorkerEnv {
@@ -167,6 +171,16 @@ async function bodyRecord(request: Request): Promise<JsonRecord> {
   }
 }
 
+function boundedLimit(url: URL, fallback: number, maximum: number): number {
+  const raw = url.searchParams.get("limit")
+  if (raw === null) return fallback
+  const value = Number(raw)
+  if (!Number.isInteger(value) || value < 1 || value > maximum) {
+    throw new ApiProblem(422, `limit must be from 1 to ${maximum}`)
+  }
+  return value
+}
+
 function requiredString(
   record: JsonRecord,
   key: string,
@@ -257,6 +271,7 @@ async function itemResponse(db: Db, item: JsonRecord) {
     .select("*")
     .eq("item_id", String(item.id))
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .limit(1)
     .maybeSingle()
   if (error) throw new ApiProblem(500, error.message)
@@ -268,6 +283,8 @@ async function itemResponse(db: Db, item: JsonRecord) {
       .createSignedUrl(fileUrl, 3600)
     if (signError) throw new ApiProblem(500, "Unable to sign asset URL")
     fileUrl = data.signedUrl
+  } else if (fileUrl === "/demo-thumbnail.jpg") {
+    fileUrl = `data:image/jpeg;base64,${DEMO_THUMBNAIL_BASE64}`
   }
   return {
     ...item,
@@ -376,6 +393,28 @@ function base64Encode(bytes: Uint8Array): string {
 
 function base64Decode(value: string): Uint8Array {
   return Uint8Array.from(atob(value), (character) => character.charCodeAt(0))
+}
+
+function eventCursor(event: JsonRecord): string {
+  return btoa(`${String(event.created_at)}|${String(event.id)}`)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replace(/=+$/, "")
+}
+
+function decodeEventCursor(value: string): { createdAt: string; id: string } {
+  try {
+    const normalized = value.replaceAll("-", "+").replaceAll("_", "/")
+    const decoded = atob(normalized + "=".repeat((4 - (normalized.length % 4)) % 4))
+    const separator = decoded.lastIndexOf("|")
+    if (separator <= 0) throw new Error()
+    const createdAt = decoded.slice(0, separator)
+    const id = decoded.slice(separator + 1)
+    if (!createdAt || !/^[0-9a-f-]{36}$/i.test(id)) throw new Error()
+    return { createdAt, id }
+  } catch {
+    throw new ApiProblem(422, "Invalid event cursor")
+  }
 }
 
 function parseOpenAIAnalysis(
@@ -804,6 +843,19 @@ export function rulesAnalysis(item: JsonRecord): AnalysisDraft {
   }
 }
 
+async function removeIncompleteAnalysis(db: Db, analysisId: string) {
+  const { error } = await db.from("analyses").delete().eq("id", analysisId)
+  if (error) {
+    console.error(
+      JSON.stringify({
+        event: "analysis_compensation_failed",
+        analysis_id: analysisId,
+        reason: error.message.slice(0, 300),
+      }),
+    )
+  }
+}
+
 async function persistAnalysis(db: Db, env: WorkerEnv, item: JsonRecord) {
   const draft = await selectedAnalysis(db, env, item)
   const { data: analysis, error } = await db
@@ -818,13 +870,17 @@ async function persistAnalysis(db: Db, env: WorkerEnv, item: JsonRecord) {
     })
     .select()
     .single()
-  if (error) throw new ApiProblem(500, error.message)
+  if (error) throw new ApiProblem(500, "Unable to persist analysis")
 
-  const { data: existing } = await db
+  const { data: existing, error: existingError } = await db
     .from("tasks")
     .select("title")
     .eq("linked_item_id", String(item.id))
     .in("status", ["todo", "in_progress"])
+  if (existingError) {
+    await removeIncompleteAnalysis(db, String(analysis.id))
+    throw new ApiProblem(500, "Unable to inspect generated tasks")
+  }
   const titles = new Set((existing ?? []).map((task) => task.title))
   const tasks = draft.tasks
     .filter((task) => !titles.has(task.title))
@@ -838,12 +894,15 @@ async function persistAnalysis(db: Db, env: WorkerEnv, item: JsonRecord) {
     }))
   if (tasks.length) {
     const { error: taskError } = await db.from("tasks").insert(tasks)
-    if (taskError) throw new ApiProblem(500, taskError.message)
+    if (taskError) {
+      await removeIncompleteAnalysis(db, String(analysis.id))
+      throw new ApiProblem(500, "Unable to persist generated tasks")
+    }
   }
   return analysis
 }
 
-async function parseItemInput(request: Request) {
+export async function parseItemInput(request: Request) {
   const contentType = request.headers.get("Content-Type") ?? ""
   let record: JsonRecord
   let file: File | null = null
@@ -883,6 +942,9 @@ async function parseItemInput(request: Request) {
   if (type === "asset" && !file) {
     throw new ApiProblem(422, "Asset items require an image file")
   }
+  if (type !== "asset" && file) {
+    throw new ApiProblem(422, "File uploads are only supported for asset items")
+  }
   const content =
     typeof record.content === "string" ? record.content.slice(0, 200_000) : null
   const metadata =
@@ -918,7 +980,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
     return json(request, env, {
       name: "StoryOps Studio Edge API",
       status: "ok",
-      version: "1.2.0",
+      version: "2.0.0",
     })
   }
   if (path === "/health") {
@@ -940,6 +1002,154 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
   }
 
   const user = await currentUser(request, db)
+
+  const consoleTurnMatch = path.match(
+    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/console\/turns$/i,
+  )
+  if (consoleTurnMatch && request.method === "POST") {
+    enforceRateLimit(`console:${user.id}`, 20, 60_000)
+    const project = await ownedProject(db, consoleTurnMatch[1], user.id)
+    const body = await bodyRecord(request)
+    const conversationId =
+      body.conversation_id === null || body.conversation_id === undefined
+        ? null
+        : requiredString(body, "conversation_id", 36)
+    if (
+      conversationId &&
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        conversationId,
+      )
+    ) {
+      throw new ApiProblem(422, "conversation_id must be a UUID")
+    }
+    if (
+      "context" in body &&
+      (!body.context ||
+        typeof body.context !== "object" ||
+        Array.isArray(body.context))
+    ) {
+      throw new ApiProblem(422, "context must be a JSON object")
+    }
+    const context =
+      body.context &&
+      typeof body.context === "object" &&
+      !Array.isArray(body.context)
+        ? (body.context as JsonRecord)
+        : {}
+    return json(
+      request,
+      env,
+      await executeConsoleTurn(db, env, {
+        project,
+        userId: user.id,
+        message: requiredString(body, "message", 20_000),
+        conversationId,
+        context,
+      }),
+      201,
+    )
+  }
+
+  const conversationsMatch = path.match(
+    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/conversations$/i,
+  )
+  if (conversationsMatch && request.method === "GET") {
+    await ownedProject(db, conversationsMatch[1], user.id)
+    const { data, error } = await db
+      .from("conversations")
+      .select("*")
+      .eq("project_id", conversationsMatch[1])
+      .eq("owner_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(boundedLimit(url, 20, 100))
+    if (error) throw new ApiProblem(500, error.message)
+    return json(request, env, data ?? [])
+  }
+
+  const messagesMatch = path.match(
+    /^\/api\/v1\/conversations\/([0-9a-f-]{36})\/messages$/i,
+  )
+  if (messagesMatch && request.method === "GET") {
+    const { data: conversation, error: conversationError } = await db
+      .from("conversations")
+      .select("*")
+      .eq("id", messagesMatch[1])
+      .eq("owner_id", user.id)
+      .maybeSingle()
+    if (conversationError) throw new ApiProblem(500, conversationError.message)
+    if (!conversation) throw new ApiProblem(404, "Conversation not found")
+    await ownedProject(db, String(conversation.project_id), user.id)
+    const { data, error } = await db
+      .from("conversation_messages")
+      .select("*")
+      .eq("conversation_id", messagesMatch[1])
+      .order("created_at")
+      .limit(boundedLimit(url, 100, 200))
+    if (error) throw new ApiProblem(500, error.message)
+    return json(request, env, data ?? [])
+  }
+
+  const artifactsMatch = path.match(
+    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/artifacts$/i,
+  )
+  if (artifactsMatch && request.method === "GET") {
+    await ownedProject(db, artifactsMatch[1], user.id)
+    const { data, error } = await db
+      .from("artifacts")
+      .select("*")
+      .eq("project_id", artifactsMatch[1])
+      .order("updated_at", { ascending: false })
+      .limit(boundedLimit(url, 50, 100))
+    if (error) throw new ApiProblem(500, error.message)
+    return json(request, env, data ?? [])
+  }
+
+  const runsMatch = path.match(
+    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/runs$/i,
+  )
+  if (runsMatch && request.method === "GET") {
+    await ownedProject(db, runsMatch[1], user.id)
+    const { data, error } = await db
+      .from("workflow_runs")
+      .select("*")
+      .eq("project_id", runsMatch[1])
+      .order("created_at", { ascending: false })
+      .limit(boundedLimit(url, 30, 100))
+    if (error) throw new ApiProblem(500, error.message)
+    return json(request, env, data ?? [])
+  }
+
+  const eventsMatch = path.match(
+    /^\/api\/v1\/projects\/([0-9a-f-]{36})\/events$/i,
+  )
+  if (eventsMatch && request.method === "GET") {
+    await ownedProject(db, eventsMatch[1], user.id)
+    const limit = boundedLimit(url, 50, 100)
+    let query = db
+      .from("workspace_events")
+      .select("*")
+      .eq("project_id", eventsMatch[1])
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(limit + 1)
+    const cursor = url.searchParams.get("cursor")
+    if (cursor) {
+      const decoded = decodeEventCursor(cursor)
+      query = query
+        .neq("id", decoded.id)
+        .lte("created_at", decoded.createdAt)
+    }
+    const { data, error } = await query
+    if (error) throw new ApiProblem(500, error.message)
+    const events = (data ?? []).slice(0, limit)
+    return json(request, env, {
+      events,
+      next_cursor:
+        (data ?? []).length > limit && events.length
+          ? eventCursor(events[events.length - 1])
+          : null,
+    })
+  }
 
   if (path === "/api/v1/projects" && request.method === "GET") {
     const { data, error } = await db
@@ -971,6 +1181,20 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .select()
       .single()
     if (error) throw new ApiProblem(500, error.message)
+    await appendWorkspaceEvent(db, {
+      projectId: String(data.id),
+      actorId: user.id,
+      eventType: "project.created",
+      source: "user",
+      objectType: "project",
+      objectId: String(data.id),
+      title: `Created project ${String(data.name)}`,
+      summary: typeof data.description === "string" ? data.description : null,
+      payload: {
+        name: data.name,
+        repo_url: data.repo_url,
+      },
+    })
     return json(request, env, await projectResponse(db, data), 201)
   }
 
@@ -1002,6 +1226,23 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .select()
         .single()
       if (error) throw new ApiProblem(500, error.message)
+      await appendWorkspaceEvent(db, {
+        projectId: projectMatch[1],
+        actorId: user.id,
+        eventType: "project.updated",
+        source: "user",
+        objectType: "project",
+        objectId: projectMatch[1],
+        title: `Updated project ${String(data.name)}`,
+        payload: {
+          before: Object.fromEntries(
+            Object.keys(updates).map((key) => [key, project[key]]),
+          ),
+          after: updates,
+          changed_fields: Object.keys(updates),
+        },
+        isReversible: Object.keys(updates).length > 0,
+      })
       return json(request, env, await projectResponse(db, data))
     }
     if (request.method === "DELETE") {
@@ -1073,6 +1314,22 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         if (filePath) await db.storage.from("assets").remove([filePath])
         throw new ApiProblem(500, error.message)
       }
+      await appendWorkspaceEvent(db, {
+        projectId: projectItemsMatch[1],
+        actorId: user.id,
+        eventType: "item.created",
+        source: "user",
+        objectType: "item",
+        objectId: String(data.id),
+        title: `Added ${String(data.title)} to ${String(data.stage)}`,
+        summary: `Created a ${String(data.type)} pipeline item.`,
+        payload: {
+          stage: data.stage,
+          type: data.type,
+          has_content: Boolean(data.content),
+          has_asset: Boolean(data.file_url),
+        },
+      })
       return json(request, env, await itemResponse(db, data), 201)
     }
   }
@@ -1120,9 +1377,41 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .select()
         .single()
       if (error) throw new ApiProblem(500, error.message)
+      await appendWorkspaceEvent(db, {
+        projectId: String(item.project_id),
+        actorId: user.id,
+        eventType: "item.updated",
+        source: "user",
+        objectType: "item",
+        objectId: itemMatch[1],
+        title: `Updated ${String(data.title)}`,
+        payload: {
+          before: Object.fromEntries(
+            Object.keys(updates).map((key) => [key, item[key]]),
+          ),
+          after: updates,
+          changed_fields: Object.keys(updates),
+        },
+        isReversible: Object.keys(updates).length > 0,
+      })
       return json(request, env, await itemResponse(db, data))
     }
     if (request.method === "DELETE") {
+      await appendWorkspaceEvent(db, {
+        projectId: String(item.project_id),
+        actorId: user.id,
+        eventType: "item.deleted",
+        source: "user",
+        objectType: "item",
+        objectId: itemMatch[1],
+        title: `Deleted ${String(item.title)}`,
+        summary: `Removed a ${String(item.type)} item from ${String(item.stage)}.`,
+        payload: {
+          title: item.title,
+          stage: item.stage,
+          type: item.type,
+        },
+      })
       if (isStoragePath(item.file_url)) {
         await db.storage.from("assets").remove([item.file_url])
       }
@@ -1142,6 +1431,7 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
       .select("*")
       .eq("item_id", analysesMatch[1])
       .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
     if (error) throw new ApiProblem(500, error.message)
     return json(request, env, data ?? [])
   }
@@ -1152,7 +1442,27 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
   if (analyzeMatch && request.method === "POST") {
     enforceRateLimit(`analysis:${user.id}`, 10, 60_000)
     const item = await ownedItem(db, analyzeMatch[1], user.id)
-    return json(request, env, await persistAnalysis(db, env, item))
+    const analysis = await persistAnalysis(db, env, item)
+    await appendWorkspaceEvent(db, {
+      projectId: String(item.project_id),
+      actorId: user.id,
+      eventType: "analysis.completed",
+      source: "agent",
+      objectType: "analysis",
+      objectId: String(analysis.id),
+      title: `${String(analysis.agent_type)} analysis completed`,
+      summary: String(analysis.summary),
+      payload: {
+        item_id: item.id,
+        item_title: item.title,
+        recommendation_count: Array.isArray(analysis.recommendations)
+          ? analysis.recommendations.length
+          : 0,
+        score_metrics: analysis.score_metrics,
+      },
+      modelId: String(analysis.model_id),
+    })
+    return json(request, env, analysis)
   }
 
   const tasksMatch = path.match(
@@ -1217,9 +1527,43 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
         .select()
         .single()
       if (updateError) throw new ApiProblem(500, updateError.message)
+      await appendWorkspaceEvent(db, {
+        projectId: String(task.project_id),
+        actorId: user.id,
+        eventType: "task.updated",
+        source: "user",
+        objectType: "task",
+        objectId: taskMatch[1],
+        title: `Updated task ${String(task.title)}`,
+        payload: {
+          before: Object.fromEntries(
+            Object.keys(updates).map((key) => [key, task[key]]),
+          ),
+          after: updates,
+          changed_fields: Object.keys(updates),
+          linked_item_id: task.linked_item_id,
+        },
+        isReversible: Object.keys(updates).length > 0,
+      })
       return json(request, env, await taskResponse(db, data))
     }
     if (request.method === "DELETE") {
+      await appendWorkspaceEvent(db, {
+        projectId: String(task.project_id),
+        actorId: user.id,
+        eventType: "task.deleted",
+        source: "user",
+        objectType: "task",
+        objectId: taskMatch[1],
+        title: `Deleted task ${String(task.title)}`,
+        summary:
+          typeof task.description === "string" ? task.description : null,
+        payload: {
+          status: task.status,
+          priority: task.priority,
+          linked_item_id: task.linked_item_id,
+        },
+      })
       const { error: deleteError } = await db
         .from("tasks")
         .delete()
@@ -1298,6 +1642,21 @@ async function route(request: Request, env: WorkerEnv): Promise<Response> {
           .filter((value) => ["brief", "script", "asset"].includes(value.type))
           .map((item) => persistAnalysis(db, env, item)),
       )
+      await appendWorkspaceEvent(db, {
+        projectId: String(project.id),
+        actorId: user.id,
+        eventType: "demo.seeded",
+        source: "system",
+        objectType: "project",
+        objectId: String(project.id),
+        title: "Seeded the StoryOps judging workspace",
+        summary: "Created four items, three analyses, and linked tasks.",
+        payload: {
+          demo_version: DEMO_VERSION,
+          item_count: 4,
+          analysis_count: 3,
+        },
+      })
       return json(request, env, { project_id: project.id }, 201)
     } catch (caught) {
       await db.from("projects").delete().eq("id", project.id)

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertCircle, ListTodo, RefreshCw } from "lucide-react"
+import { AlertCircle, Bot, History, ListTodo, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 
@@ -178,11 +178,28 @@ export default function ProjectPipelinePage() {
                   </p>
                 ) : null}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button asChild size="sm">
+                  <Link href={`/projects/${project.id}/console`}>
+                    <Bot />
+                    AI console
+                  </Link>
+                </Button>
                 <Button asChild variant="outline" size="sm">
                   <Link href={`/projects/${project.id}/tasks`}>
                     <ListTodo />
                     Tasks
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="hidden md:inline-flex"
+                >
+                  <Link href={`/projects/${project.id}/timeline`}>
+                    <History />
+                    Timeline
                   </Link>
                 </Button>
                 <Button variant="outline" size="sm" onClick={retryLoad}>

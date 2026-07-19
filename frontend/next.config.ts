@@ -4,13 +4,26 @@ const remotePatterns: NonNullable<
   NonNullable<NextConfig["images"]>["remotePatterns"]
 > = []
 
+const isDevelopment = process.env.NODE_ENV === "development"
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const apiUrl = process.env.NEXT_PUBLIC_API_URL
+const scriptSrc =
+  isDevelopment
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    : "script-src 'self' 'unsafe-inline'"
+const connectSources = new Set(["'self'"])
+const imageSources = new Set(["'self'", "data:", "blob:"])
 if (!supabaseUrl && process.env.NODE_ENV === "production") {
   throw new Error("NEXT_PUBLIC_SUPABASE_URL must be configured before building")
 }
 if (supabaseUrl) {
   try {
     const parsedUrl = new URL(supabaseUrl)
+    connectSources.add(parsedUrl.origin)
+    connectSources.add(
+      `${parsedUrl.protocol === "http:" ? "ws:" : "wss:"}//${parsedUrl.host}`,
+    )
+    imageSources.add(parsedUrl.origin)
     remotePatterns.push({
       protocol: parsedUrl.protocol === "http:" ? "http" : "https",
       hostname: parsedUrl.hostname,
@@ -20,6 +33,29 @@ if (supabaseUrl) {
   } catch {
     // Runtime configuration validation reports malformed Supabase URLs.
   }
+}
+if (apiUrl) {
+  try {
+    connectSources.add(new URL(apiUrl).origin)
+  } catch {
+    // Runtime configuration validation reports malformed API URLs.
+  }
+}
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  scriptSrc,
+  "style-src 'self' 'unsafe-inline'",
+  `img-src ${Array.from(imageSources).join(" ")}`,
+  "font-src 'self' data:",
+  `connect-src ${Array.from(connectSources).join(" ")}`,
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+]
+if (!isDevelopment) {
+  contentSecurityPolicy.push("upgrade-insecure-requests")
 }
 
 const nextConfig: NextConfig = {
@@ -33,19 +69,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co",
-              "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://storyops-api.ukexe06.workers.dev",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-            ].join("; "),
+            value: contentSecurityPolicy.join("; "),
           },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },

@@ -13,6 +13,7 @@ from app.models.item import Item
 from app.models.project import Project
 from app.models.task import Task
 from app.schemas.task import TaskResponse, TaskStatus, TaskStatusUpdate
+from app.services.workspace_events import record_workspace_event
 
 router = APIRouter(tags=["tasks"])
 
@@ -81,9 +82,29 @@ async def update_task(
     await _get_owned_project(task.project_id, user["user_id"], db)
 
     update_data = body.model_dump(exclude_unset=True)
+    previous = {field: getattr(task, field) for field in update_data}
     for field, value in update_data.items():
         setattr(task, field, value)
 
+    await record_workspace_event(
+        db,
+        project_id=task.project_id,
+        actor_id=uuid.UUID(user["user_id"]),
+        event_type="task.updated",
+        source="user",
+        object_type="task",
+        object_id=task.id,
+        title=f"Updated task {task.title}",
+        payload={
+            "before": previous,
+            "after": update_data,
+            "changed_fields": list(update_data),
+            "linked_item_id": (
+                str(task.linked_item_id) if task.linked_item_id else None
+            ),
+        },
+        is_reversible=bool(update_data),
+    )
     await db.commit()
     await db.refresh(task)
     linked_item_title = None
@@ -103,5 +124,23 @@ async def delete_task(task_id: uuid.UUID, db: DB, user: CurrentUser) -> None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
     await _get_owned_project(task.project_id, user["user_id"], db)
+    await record_workspace_event(
+        db,
+        project_id=task.project_id,
+        actor_id=uuid.UUID(user["user_id"]),
+        event_type="task.deleted",
+        source="user",
+        object_type="task",
+        object_id=task.id,
+        title=f"Deleted task {task.title}",
+        summary=task.description,
+        payload={
+            "status": task.status,
+            "priority": task.priority,
+            "linked_item_id": (
+                str(task.linked_item_id) if task.linked_item_id else None
+            ),
+        },
+    )
     await db.delete(task)
     await db.commit()

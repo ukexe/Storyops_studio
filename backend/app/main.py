@@ -18,6 +18,7 @@ from app.agents.watsonx_client import (
     get_connection_status,
 )
 from app.routers import analyses as analyses_router
+from app.routers import control_plane as control_plane_router
 from app.routers import demo as demo_router
 from app.routers import items as items_router
 from app.routers import projects as projects_router
@@ -63,7 +64,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="StoryOps Studio API",
     description="Agentic AI creative operations platform — IBM AI Builders Challenge 2026",
-    version="1.2.0",
+    version="2.0.0",
     lifespan=lifespan,
     docs_url=None if settings.ENVIRONMENT == "production" else "/docs",
     redoc_url=None if settings.ENVIRONMENT == "production" else "/redoc",
@@ -88,6 +89,7 @@ app.include_router(items_router.router, prefix=API_PREFIX)
 app.include_router(tasks_router.router, prefix=API_PREFIX)
 app.include_router(analyses_router.router, prefix=API_PREFIX)
 app.include_router(demo_router.router, prefix=API_PREFIX)
+app.include_router(control_plane_router.router, prefix=API_PREFIX)
 
 
 @app.get("/")

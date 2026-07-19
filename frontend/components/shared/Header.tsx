@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { House, LogOut, Settings2 } from "lucide-react"
+import { Bot, House, LogOut, Settings2 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/shared/ThemeToggle"
 import { createClient } from "@/utils/supabase/client"
 
 interface HeaderProps {
@@ -15,8 +17,10 @@ interface HeaderProps {
 
 export function Header({ context, children }: HeaderProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [email, setEmail] = useState<string | null>(null)
   const [isSigningOut, setIsSigningOut] = useState(false)
+  const projectId = /^\/projects\/([^/]+)/.exec(pathname)?.[1]
 
   useEffect(() => {
     let isMounted = true
@@ -39,9 +43,18 @@ export function Header({ context, children }: HeaderProps) {
 
   async function handleSignOut() {
     setIsSigningOut(true)
-    await createClient().auth.signOut()
-    router.replace("/login")
-    router.refresh()
+    try {
+      const { error } = await createClient().auth.signOut()
+      if (error) throw error
+      router.replace("/login")
+      router.refresh()
+    } catch (caught) {
+      toast.error("Unable to sign out", {
+        description:
+          caught instanceof Error ? caught.message : "Please try again.",
+      })
+      setIsSigningOut(false)
+    }
   }
 
   return (
@@ -62,6 +75,7 @@ export function Header({ context, children }: HeaderProps) {
 
         <div className="ml-auto flex items-center gap-2">
           {children}
+          <ThemeToggle />
           <Button asChild variant="ghost" size="sm" className="hidden sm:flex">
             <Link href="/">
               <House />
@@ -71,6 +85,19 @@ export function Header({ context, children }: HeaderProps) {
           <Button asChild variant="ghost" size="sm">
             <Link href="/dashboard">Dashboard</Link>
           </Button>
+          {projectId ? (
+            <Button
+              asChild
+              variant={pathname.endsWith("/console") ? "secondary" : "ghost"}
+              size="sm"
+              className="hidden xl:flex"
+            >
+              <Link href={`/projects/${projectId}/console`}>
+                <Bot />
+                AI console
+              </Link>
+            </Button>
+          ) : null}
           <Button asChild variant="ghost" size="sm" className="hidden lg:flex">
             <Link href="/settings">
               <Settings2 />

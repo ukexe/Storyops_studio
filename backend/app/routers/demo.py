@@ -20,6 +20,7 @@ from app.database import get_db
 from app.models.item import Item
 from app.models.project import Project
 from app.rate_limit import enforce_rate_limit
+from app.services.workspace_events import record_workspace_event
 from app.storage import delete_asset, upload_asset
 
 router = APIRouter(prefix="/demo", tags=["demo"])
@@ -148,6 +149,22 @@ async def seed_demo(db: DB, user: OptionalCurrentUser) -> DemoSeedResponse:
         for item in (brief, script, asset):
             await dispatch(item, db, commit=False)
 
+        await record_workspace_event(
+            db,
+            project_id=project.id,
+            actor_id=owner_id,
+            event_type="demo.seeded",
+            source="system",
+            object_type="project",
+            object_id=project.id,
+            title="Seeded the StoryOps judging workspace",
+            summary="Created four items, three analyses, and linked tasks.",
+            payload={
+                "demo_version": DEMO_VERSION,
+                "item_count": 4,
+                "analysis_count": 3,
+            },
+        )
         await db.commit()
         return DemoSeedResponse(project_id=project.id)
     except (WatsonxError, ValueError) as exc:

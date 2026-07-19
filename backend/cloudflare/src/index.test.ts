@@ -1,6 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { openAIAnalysis, rulesAnalysis, type WorkerEnv } from "./index"
+import {
+  deterministicGeneration,
+  planCommand,
+} from "./control-plane"
+import {
+  openAIAnalysis,
+  parseItemInput,
+  rulesAnalysis,
+  type WorkerEnv,
+} from "./index"
 
 const env: WorkerEnv = {
   SUPABASE_URL: "https://project.supabase.co",
@@ -51,6 +60,29 @@ describe("edge analysis rules", () => {
 
     expect(result.score_metrics.longest_scene_seconds).toBe(12)
     expect(result.tasks[0]?.priority).toBe("high")
+  })
+
+  it("rejects hidden file uploads on non-asset items", async () => {
+    const form = new FormData()
+    form.set("stage", "Script")
+    form.set("type", "script")
+    form.set("title", "Script with stale file")
+    form.set("content", "A valid script body.")
+    form.set(
+      "file",
+      new File([new Uint8Array([0xff, 0xd8, 0xff])], "stale.jpg", {
+        type: "image/jpeg",
+      }),
+    )
+
+    await expect(
+      parseItemInput(
+        new Request("https://storyops.example/api/v1/projects/id/items", {
+          method: "POST",
+          body: form,
+        }),
+      ),
+    ).rejects.toThrow("File uploads are only supported for asset items")
   })
 })
 
@@ -127,5 +159,49 @@ describe("OpenAI analysis provider", () => {
     expect(body.input[0].content[1].image_url).toMatch(
       /^data:image\/jpeg;base64,/,
     )
+  })
+})
+
+describe("IP Foundry control plane", () => {
+  it("routes report requests to the impact specialist and artifact writer", () => {
+    const plan = planCommand(
+      "Generate an executive impact report.",
+      "00000000-0000-0000-0000-000000000001",
+    )
+
+    expect(plan.intent).toBe("executive_report")
+    expect(plan.agentType).toBe("impact_analyst")
+    expect(plan.tools).toContain("artifact_writer")
+    expect(plan.artifactType).toBe("executive_report")
+  })
+
+  it("produces an audited, evidence-bounded deterministic fallback", () => {
+    const plan = planCommand(
+      "Analyze my uploaded documents.",
+      "00000000-0000-0000-0000-000000000001",
+    )
+    const result = deterministicGeneration("Analyze my uploaded documents.", plan, {
+      project: { name: "Pattern Library" },
+      metrics: {
+        total_items: 2,
+        total_analyses: 1,
+        task_status_counts: { todo: 1, in_progress: 0, done: 0 },
+      },
+      items: [
+        { title: "Analyzed brief", analysis: { summary: "Ready" } },
+        { title: "Unreviewed script", analysis: null },
+      ],
+      tasks: [
+        {
+          title: "Resolve evidence gap",
+          priority: "high",
+          status: "todo",
+        },
+      ],
+    })
+
+    expect(result.modelId).toBe("storyops/control-plane-rules-v1")
+    expect(result.response).toContain("2 items")
+    expect(result.recommendedActions[0]).toContain("Unreviewed script")
   })
 })

@@ -253,9 +253,25 @@ export default function ItemDetailPage() {
                     </pre>
                   ) : null}
 
-                  {!item.file_url && !item.content ? (
+                  {Object.keys(item.metadata).length > 0 ? (
+                    <section aria-labelledby="item-structured-metadata">
+                      <h2
+                        id="item-structured-metadata"
+                        className="mb-2 text-sm font-semibold"
+                      >
+                        Structured metadata
+                      </h2>
+                      <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-words rounded-xl border bg-muted/20 p-4 font-mono text-xs leading-5">
+                        {JSON.stringify(item.metadata, null, 2)}
+                      </pre>
+                    </section>
+                  ) : null}
+
+                  {!item.file_url &&
+                  !item.content &&
+                  Object.keys(item.metadata).length === 0 ? (
                     <div className="flex min-h-48 items-center justify-center rounded-xl border border-dashed bg-muted/20 p-6 text-center text-sm text-muted-foreground">
-                      This item has no text or asset content yet.
+                      This item has no text, asset, or structured metadata yet.
                     </div>
                   ) : null}
                 </CardContent>
