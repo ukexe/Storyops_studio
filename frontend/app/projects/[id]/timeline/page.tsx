@@ -200,18 +200,18 @@ export default function ProjectTimelinePage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="gap-1.5">
                     <History className="size-3" />
-                    Enterprise event ledger
+                    Workspace event history
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    Append-only · correlation-aware · replay-safe
+                    Application append-only · correlation-aware · source-linked replay
                   </span>
                 </div>
                 <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
                   Workspace timeline
                 </h1>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                  Follow uploads, analyses, task changes, chat requests, delegated
-                  runs, generated artifacts, failures, and model audits as one
+                  Follow uploads, analyses, task changes, Asset Studio requests,
+                  specialist runs, generated artifacts, failures, and model audits as one
                   explainable event stream.
                 </p>
               </div>
@@ -307,7 +307,7 @@ export default function ProjectTimelinePage() {
                         2
                       </span>
                       <p>
-                        The console compares current evidence with the original run
+                        The Asset Studio compares current evidence with the original run
                         before proposing steps.
                       </p>
                     </div>

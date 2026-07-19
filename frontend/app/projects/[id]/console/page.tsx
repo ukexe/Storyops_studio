@@ -866,7 +866,10 @@ export default function ProjectConsolePage() {
                     <WorkflowTrace run={latestRun} steps={latestSteps} />
                   ) : null}
                   {inspectorTab === "artifacts" ? (
-                    <ArtifactShelf artifacts={artifacts} />
+                    <ArtifactShelf
+                      key={artifacts[0]?.id ?? "empty"}
+                      artifacts={artifacts}
+                    />
                   ) : null}
                   {inspectorTab === "timeline" ? (
                     <WorkspaceTimeline

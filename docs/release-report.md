@@ -145,7 +145,7 @@ Historical workflow steps can be reloaded through
 Validated bundle sizes:
 
 - API Worker: 883.70 KiB upload / 200.71 KiB gzip
-- Frontend Worker: 16,849.93 KiB upload / 3,478.89 KiB gzip
+- Frontend Worker: 9,802.15 KiB upload / 2,106.79 KiB gzip
 
 ## Validation results
 

@@ -559,7 +559,7 @@ function ConsolePreview() {
         <span className="size-2.5 rounded-full bg-amber-400/75" />
         <span className="size-2.5 rounded-full bg-emerald-400/75" />
         <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          Operating console · interaction model
+          AI Asset Studio · interaction model
         </span>
       </div>
       <div className="grid lg:grid-cols-[0.82fr_1.18fr]">
@@ -608,7 +608,7 @@ function ConsolePreview() {
 
           <div className="mt-6">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-semibold">Delegation trace</span>
+              <span className="text-xs font-semibold">Run trace</span>
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 Transparent workflow
               </span>
