@@ -2,6 +2,54 @@
 
 All notable changes to StoryOps Studio are documented here.
 
+## [2.0.0] - 2026-07-19
+
+### Added
+
+- Interactive enterprise product homepage with live architecture, console,
+  capability, discovery pipeline, Atlas, timeline, agent, integration, and
+  roadmap explorers
+- Authenticated project AI operating console with durable conversations,
+  messages, workflow runs, transparent steps, typed tool receipts, confidence,
+  model audit IDs, recommended actions, and UI intents
+- Reusable executive-report and architecture artifacts with source-message,
+  conversation, run, model, and workspace-snapshot lineage
+- Append-only workspace event ledger with source, object, actor, correlation,
+  causation, model, payload, and reversibility metadata
+- Searchable enterprise workspace timeline and non-destructive replay planning
+- Alembic revision `4e0683f5a3ed` with six control-plane tables, constraints,
+  indexes, RLS hardening, and explicit backend Data API grants
+- Alembic revision `7e34a290f9de` protecting migration metadata from public
+  Data API access
+- Matching FastAPI/Granite and Cloudflare/OpenAI console contracts with
+  deterministic audited fallback
+- Control-plane ownership, persistence, artifact, fallback, pagination, and
+  event tests
+
+### Changed
+
+- Project, item, analysis, task, and demo mutations now emit workspace events.
+- Development CSP allows `unsafe-eval` only in development so React debugging
+  works without weakening the production policy.
+- CSP connection and image sources are derived from the configured API and
+  Supabase origins; development no longer upgrades local HTTP API requests.
+- Item detail now renders structured edit/performance metadata.
+- Item-type changes clear stale file state, and both edge and FastAPI adapters
+  reject files on non-asset items.
+- Legacy edge demo thumbnails are returned as embedded image data instead of a
+  missing frontend path.
+- Edge analysis compensates by removing a newly inserted analysis when task
+  inspection or persistence fails.
+- Project navigation exposes the AI console and workspace timeline.
+
+### Validation and deployment
+
+- Applied and verified the production schema through `7e34a290f9de`.
+- Deployed API Worker version `d3674f7c-e879-4fd3-a00d-1343d0f05eff`.
+- Deployed frontend Worker version `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`.
+- Verified production OpenAI console analysis and executive artifact generation.
+- Verified workflow steps, event timeline, private schema grants, and cleanup.
+
 ## [1.2.0] - 2026-07-19
 
 ### Added in 1.2

@@ -4,6 +4,54 @@
 > Each task is scoped to ~1 hour of focused work.
 > Tasks within a phase are ordered by dependency. Complete them in order unless marked **parallel-safe**.
 
+## IP Foundry V2 transformation
+
+> Detailed architecture:
+> [ip-foundry-v2-architecture.md](ip-foundry-v2-architecture.md)
+
+### Implemented in source
+
+- [x] Complete repository, runtime, data, UX, and hackathon-judge audit
+- [x] Define the IP Foundry control-plane architecture without discarding the
+  working StoryOps creative vertical
+- [x] Replace the commercial landing page with an interactive product experience
+- [x] Add explicit Live / V2 foundation / Roadmap capability maturity labels
+- [x] Add conversations and conversation messages
+- [x] Add workflow runs and transparent workflow steps
+- [x] Add reusable, versioned artifacts
+- [x] Add an append-only workspace event ledger
+- [x] Emit project, item, analysis, task, demo, console, failure, and artifact events
+- [x] Add the authenticated AI operating console
+- [x] Add the searchable, replay-safe enterprise workspace timeline
+- [x] Add matching FastAPI/Granite and Worker/OpenAI contracts
+- [x] Add deterministic, explicitly audited control-plane fallback
+- [x] Add migration, ownership, persistence, artifact, fallback, cursor, and event tests
+
+### Release gates
+
+- [x] Apply control-plane and metadata-hardening migrations through
+  `7e34a290f9de` to production Supabase
+- [x] Run database advisors and verify new grants, RLS, indexes, and constraints
+- [x] Deploy and smoke-test the production edge API control plane
+- [x] Deploy and smoke-test the redesigned frontend
+- [x] Verify real provider-backed analysis and executive report artifacts
+- [x] Verify fallback, tenant isolation, cursor pagination, and public mobile layout
+- [ ] Add authenticated browser E2E coverage for artifact download and replay handoff
+- [ ] Add production control-plane cost, latency, fallback, and error dashboards
+
+### Dependency-ordered intelligence roadmap
+
+- [ ] Add source and source-version records
+- [ ] Add document parsers and evidence-addressable chunks
+- [ ] Add retryable embedding jobs and a vector index
+- [ ] Add authorized hybrid semantic search
+- [ ] Add pattern candidates, evidence links, scoring, and duplicate detection
+- [ ] Add Atlas knowledge nodes, edges, and graph projections
+- [ ] Add approval-aware repository generation in a sandbox
+- [ ] Add impact observations, assumptions, forecasts, and sensitivity ranges
+- [ ] Add workspace memberships, roles, policies, quotas, and collaboration
+- [ ] Move long-running work to durable Agent + Workflow execution
+
 ---
 
 ## Phase 1 — Backend Skeleton

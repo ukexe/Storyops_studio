@@ -138,13 +138,53 @@ Expected:
 - Only that card's controls are disabled while saving.
 - Refreshing the page preserves the new status.
 
-### 9. Close the story
+### 9. Operate the workspace through AI
+
+Return to the pipeline and select **AI console**.
+
+Use:
+
+```text
+Generate an executive impact report.
+```
+
+Show:
+
+- The persisted conversation
+- Current objective and completed run
+- Context, evidence, and artifact-writer tool receipts
+- Impact Analyst delegation
+- Confidence and explicit `openai/<model>` audit ID
+- Reusable executive report in the artifact shelf
+
+Explain that the chat is not a detached chatbot: one request creates a
+conversation message, workflow run, transparent steps, artifact, and correlated
+timeline events.
+
+### 10. Replay the workflow evidence
+
+Select **Timeline**.
+
+Show:
+
+- Project and item creation events
+- Console start/completion events
+- Artifact generation event
+- Correlation IDs and model audit metadata
+- Reversible update receipts
+- **Create replay plan** on a workflow event
+
+Explain that replay prepares a new, reviewable run against current evidence; it
+never edits historical events.
+
+### 11. Close the story
 
 Summarize the loop:
 
 ```text
 Creative input → specialized analysis → structured recommendation
-→ team task → completed work → future performance learning
+→ team task → operating-console synthesis → reusable artifact
+→ explainable timeline → future performance learning
 ```
 
 Conclude that StoryOps uses AI to protect creative quality and reduce
@@ -173,6 +213,9 @@ To demonstrate authoring rather than seeding:
 - [x] Private asset uploads return working signed previews.
 - [x] Generated tasks include linked item titles.
 - [x] Task status changes persist after reload.
+- [x] Production console analysis uses the configured OpenAI model.
+- [x] Executive report generation persists an artifact and three workflow steps.
+- [x] Workspace timeline records correlated project, item, console, and artifact events.
 - [ ] Mobile layouts do not overflow.
 - [ ] Keyboard navigation reaches all demo controls.
 - [ ] No browser console errors occur.

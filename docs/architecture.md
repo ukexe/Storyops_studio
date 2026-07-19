@@ -1,6 +1,23 @@
 # StoryOps Studio Architecture
 
-> Release architecture for StoryOps Studio v1.2.0.
+> Release architecture for StoryOps Studio v2.0.0.
+
+## IP Foundry V2 control plane
+
+V2 preserves StoryOps
+as the first creative workflow while adding durable conversations, messages,
+workflow runs and steps, reusable artifacts, and an append-only workspace event
+ledger. New authenticated routes provide a context-aware AI operating console
+and a replay-safe enterprise timeline.
+
+The production schema is applied through revision `7e34a290f9de`, and both
+Cloudflare Workers run v2.0.0. Roadmap-only
+capabilities such as embeddings, semantic search, pattern clustering, Atlas,
+and repository generation are clearly distinguished from implemented behavior.
+
+See [IP Foundry Agent V2 architecture](ip-foundry-v2-architecture.md) for the
+repository critique, target architecture, control-plane flow, data contracts,
+explainability model, timeline semantics, and dependency-ordered rollout.
 
 ## System architecture
 
@@ -12,15 +29,16 @@ Browser
 Cloudflare Workers — Next.js 16 through OpenNext
   ├─ Supabase Auth browser/server clients
   ├─ Next.js middleware session refresh and route protection
-  ├─ Dashboard, pipeline, item analysis, and task board
+  ├─ Dashboard, pipeline, analysis, tasks, AI console, and timeline
   └─ Typed REST client with Supabase bearer token
   │
   │ HTTPS + Authorization: Bearer <Supabase JWT>
   ▼
 Cloudflare Worker — production REST adapter
   ├─ Supabase session validation and project ownership checks
-  ├─ Project, item, analysis, task, and demo routes
+  ├─ Domain CRUD, control-plane, artifact, run, and event routes
   ├─ OpenAI structured text and vision analysis
+  ├─ Context-aware console synthesis
   ├─ Deterministic edge-agent fallback
   └─ Supabase PostgREST and private Storage client
   │                              │
@@ -29,7 +47,11 @@ Supabase Postgres          OpenAI Responses API
   ├─ projects
   ├─ items
   ├─ analyses
-  └─ tasks
+  ├─ tasks
+  ├─ conversations + messages
+  ├─ workflow runs + steps
+  ├─ artifacts
+  └─ workspace events
 
 Supabase Storage
   └─ private assets bucket (project-scoped object paths + signed reads)
@@ -43,7 +65,7 @@ Canonical FastAPI deployment
 The frontend never receives database credentials or the Supabase secret key.
 It authenticates with Supabase Auth and sends the resulting JWT to the REST
 adapter. Only backend runtimes—the live adapter or canonical FastAPI service—
-can access the four application tables.
+can access application and control-plane tables.
 
 ## Repository layout
 
@@ -68,6 +90,8 @@ can access the four application tables.
 - `/projects/[id]` — seven-stage pipeline.
 - `/projects/[id]/items/[itemId]` — content preview and AI analysis.
 - `/projects/[id]/tasks` — AI-generated task board.
+- `/projects/[id]/console` — context-aware AI operating console and run trace.
+- `/projects/[id]/timeline` — searchable, correlation-aware event timeline.
 - `/settings` — live service, analysis-mode, and security-boundary status.
 
 `frontend/middleware.ts` is the edge session entry point. It refreshes Supabase
@@ -244,6 +268,31 @@ during re-analysis and does not poll.
 - title, description, status, and priority
 - created and updated timestamps
 
+### `conversations` and `conversation_messages`
+
+- Project and owner-scoped durable conversations
+- User, assistant, tool, and system messages
+- Optional workflow-run link
+- Agent, model, tool-receipt, context, and timestamp metadata
+
+### `workflow_runs` and `workflow_steps`
+
+- Objective, run type, lifecycle status, progress, current agent, and confidence
+- Ordered specialist/tool steps with input/output summaries and dependencies
+- Start, completion, cancellation, approval, and failure-ready state model
+
+### `artifacts`
+
+- Project, conversation, and source-message lineage
+- Type, title, content, status, version, and metadata
+- Model, confidence, run, and source-snapshot audit data
+
+### `workspace_events`
+
+- Append-only user, agent, tool, workflow, and system events
+- Actor, object, run, artifact, correlation, and causation links
+- Human-readable summary, structured payload, model ID, and reversibility marker
+
 Stages are fixed constants rather than rows. This removes joins and migration
 overhead for a workflow whose order is load-bearing:
 
@@ -251,10 +300,11 @@ overhead for a workflow whose order is load-bearing:
 Idea → Script → Assets → Edit → Feedback → Publish → Analyze
 ```
 
-The hardening migration enables RLS and revokes `anon` and `authenticated`
-privileges on all application tables. FastAPI's service database connection
-therefore remains the only data path. Database CHECK constraints protect stage,
-item type, task status, and task priority values.
+The hardening migrations enable RLS and revoke `anon` and `authenticated`
+privileges on all application, control-plane, and migration metadata tables.
+Only trusted backend runtimes use privileged data access. Database CHECK
+constraints protect stage, item type, task state, control-plane lifecycle,
+progress, confidence, message role, and artifact version values.
 
 ## Storage
 
@@ -271,6 +321,7 @@ public URLs only from the configured Supabase host without redirects.
 
 - Cloudflare Worker configuration: `backend/cloudflare/wrangler.jsonc`.
 - Live API: `https://storyops-api.ukexe06.workers.dev`.
+- v2.0.0 Worker version: `d3674f7c-e879-4fd3-a00d-1343d0f05eff`.
 - Backend-only Supabase and OpenAI keys configured as Worker secrets.
 - `gpt-5.6-luna` provides production text and vision analysis.
 - Deterministic fallback agents keep every workflow functional and use
@@ -289,6 +340,7 @@ public URLs only from the configured Supabase host without redirects.
 - Cloudflare Worker configuration: `frontend/wrangler.jsonc`.
 - OpenNext configuration: `frontend/open-next.config.ts`.
 - Live frontend: `https://storyops.ukexe06.workers.dev`.
+- v2.0.0 Worker version: `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`.
 - Production API URL:
   `https://storyops-api.ukexe06.workers.dev/api/v1`.
 - Node.js 22.13 or newer.
@@ -304,7 +356,11 @@ public URLs only from the configured Supabase host without redirects.
   persists deterministic analysis, and records a `storyops/edge-*` model ID.
 - watsonx unavailable: the canonical FastAPI service keeps CRUD healthy and
   returns a sanitized gateway error for Granite-only requests.
-- Invalid model JSON: no analysis or tasks are committed.
+- Invalid production model JSON: the edge API records an explicit deterministic
+  fallback result; the canonical Granite path returns a sanitized error without
+  committing analysis or tasks.
+- Console failure: the run is marked failed and a correlated failure event is
+  persisted without creating an artifact.
 - Demo seed failure: the database transaction is rolled back and the uploaded
   demo thumbnail is cleaned up.
 - Task update failure: the frontend rolls back its optimistic move and

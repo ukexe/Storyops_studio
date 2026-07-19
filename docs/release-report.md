@@ -1,245 +1,266 @@
-# StoryOps Studio v1.2.0 engineering report
+# StoryOps Studio v2.0.0 engineering report
 
 ## Executive result
 
-StoryOps Studio is operational in production:
+StoryOps Studio — IP Foundry V2 is deployed:
 
 - Frontend: <https://storyops.ukexe06.workers.dev>
-- REST API: <https://storyops-api.ukexe06.workers.dev>
+- API: <https://storyops-api.ukexe06.workers.dev>
 - Database, Auth, and Storage: Supabase project `namuaqfivfwopaqkdjuw`
-- Applied schema revision: `b91f4d8a2c10`
+- Schema head: `7e34a290f9de`
+- API Worker version: `d3674f7c-e879-4fd3-a00d-1343d0f05eff`
+- Frontend Worker version: `a04fdb03-cf17-43e5-a2b8-9f34feeb1d8b`
 
-The authenticated browser journey was exercised through project creation,
-content ingestion, analysis, recommendations, generated tasks, task updates,
-reload persistence, logout, re-login, and data recovery. Demo seeding and
-private image upload/signing/deletion were also exercised against production.
+Public probes report API v2.0.0, connected Postgres, configured OpenAI
+production inference, and explicit deterministic edge fallback.
 
-## Repository audit
+An authenticated production smoke test verified:
 
-The pre-existing FastAPI, Next.js, agent, migration, Docker, CI, and
-documentation foundations were retained. The blocking gaps were production
-data provisioning, a reachable API, frontend API configuration, Auth redirect
-configuration, private asset delivery, production acceptance testing, and
-several security/contract inconsistencies.
+- Project creation and cleanup
+- Item creation
+- Context-aware console analysis
+- Executive impact report generation
+- Persisted conversation, workflow run, and three transparent steps
+- `openai/gpt-5.6-luna` model audit IDs
+- Artifact persistence
+- Correlated workspace timeline events
+- Temporary user and project cleanup
 
-The obsolete Todos starter route was removed because it bypassed the backend
-contract and referenced an unmigrated table.
+## Release scope
 
-## Implemented work
+### Premium product experience
 
-### Database
+The public homepage is now a self-guided enterprise product demonstration:
 
-- Applied all three Alembic revisions to production.
-- Verified `projects`, `items`, `analyses`, and `tasks`.
-- Verified primary/foreign keys, cascading behavior, CHECK constraints, indexes,
-  JSONB columns, RLS, and revoked browser-role grants.
-- Added database-side UUID defaults.
-- Added updated-at triggers for mutable tables.
-- Added task/item project-consistency enforcement.
-- Added versioned, owner-unique demo seeding.
-- Provisioned the `assets` bucket with a 10 MB image limit and private access.
-- Created and tested a least-privilege `storyops_app` FastAPI runtime role.
+- Live runtime status
+- Interactive operating-console preview
+- Clickable architecture explorer
+- Discovery pipeline walkthrough
+- Capability explorer with inputs, outputs, models, value, use cases,
+  dependencies, architecture, and maturity
+- Atlas and event-timeline previews
+- Multi-agent operating model
+- Explainability and trust contract
+- Enterprise integration and roadmap views
 
-### Backend and API
+Every capability is labelled **Live**, **V2 foundation**, or **Roadmap**.
 
-- Preserved the canonical FastAPI implementation and full watsonx SDK agents.
-- Added bounded input and model-output validation.
-- Added expiring JWKS caching, required claims, and anonymous-session rejection.
-- Added dynamic database readiness and exact configured-model health checks.
-- Added analysis/demo throttles and generated-task deduplication.
-- Added private asset paths, signed reads, secret-key downloads, and cleanup.
-- Added a Cloudflare Worker deployment adapter implementing the complete REST
-  contract through Supabase Auth, PostgREST, and Storage.
-- Added disclosed OpenAI Responses API text and vision analysis with strict
-  structured output, provider audit IDs, bounded requests, and API storage
-  disabled.
-- Added deterministic edge agents for every item type with explicit
-  `storyops/edge-*` audit IDs.
+### AI operating console
 
-### Frontend
+`/projects/[id]/console` adds:
 
-- Bound all dashboard routes to the production REST API.
-- Added structured JSON ingestion for Edit and Performance agents.
-- Added a production Settings page for API, database, analysis-mode, and
-  security-boundary status.
-- Added accessible success notifications for projects, items, analyses, demo
-  seeding, and task updates.
-- Added explicit edge-agent status rather than mislabeling fallback output.
-- Added a deployed demo thumbnail and private signed user-asset previews.
-- Added CSP, narrower session middleware, preserved protected deep-link query
-  strings, improved theme state, and descriptive project links.
-- Removed all Todos code and navigation.
+- Persistent project conversations
+- Page and project context handling
+- Deterministic command planning
+- Specialist routing
+- Bounded workspace snapshots
+- Structured OpenAI/Granite-compatible responses
+- Explicit deterministic fallback
+- Workflow run, progress, confidence, agent, and tool trace
+- Reusable executive and architecture artifacts
+- UI intents and next-action recommendations
 
-### CI and release engineering
+The console exposes objectives, tools, evidence, confidence, progress, model
+IDs, and outcomes. It does not claim to expose private chain-of-thought.
 
-- Added edge API dependency audit, type-check, unit tests, and Wrangler dry-run
-  to backend CI.
-- Added repository-history Gitleaks scanning.
-- Updated GitHub Actions to current Node 24-based major releases.
-- Pinned the Python base image digest.
-- Corrected the Render Blueprint to a plan that supports pre-deploy migrations.
-- Added the edge API package, deployment config, tests, and runbook.
+### Enterprise workspace timeline
 
-## Data schema
+`/projects/[id]/timeline` projects append-only events for:
 
-### `projects`
+- Project creation and updates
+- Item creation, updates, and deletion
+- Analysis completion
+- Task updates and deletion
+- Demo seeding
+- Console start, completion, and failure
+- Artifact generation
 
-UUID ID, owner UUID, name, description, repository URL, optional demo version,
-and created/updated timestamps.
+Events include source, object, actor, model, correlation, causation, payload,
+reversibility, and timestamps. Replay planning creates a new console request;
+historical events are never edited.
 
-### `items`
+### Data model
 
-UUID ID, project FK, fixed pipeline stage, item type, title, optional text,
-private asset object path, JSONB metadata, and timestamps.
+Revision `4e0683f5a3ed` adds:
 
-### `analyses`
+- `conversations`
+- `conversation_messages`
+- `workflow_runs`
+- `workflow_steps`
+- `artifacts`
+- `workspace_events`
 
-UUID ID, item FK, agent type, summary, structured recommendations JSONB,
-heterogeneous score metrics JSONB, model/ruleset audit ID, and creation time.
+The migration adds:
 
-### `tasks`
+- Database UUID defaults
+- Foreign keys and cascade behavior
+- Query-aligned and foreign-key indexes
+- Lifecycle, progress, confidence, role, and version constraints
+- Updated-at triggers
+- RLS on every table
+- Revoked `anon` and `authenticated` privileges
+- Explicit `service_role` CRUD grants
+- Conditional `storyops_app` runtime grants
 
-UUID ID, project FK, optional linked item FK, title, description, status,
-priority, and timestamps.
+Revision `7e34a290f9de` enables RLS and revokes public/browser access on
+`public.alembic_version`.
 
-## API summary
+Production verification confirmed all V2 tables exist, RLS is enabled, browser
+roles lack access, `service_role` has required access, and the `assets` bucket
+remains private.
 
-Public:
+## AI architecture
 
-- `GET /`
-- `GET /live`
-- `GET /health`
+### Production
 
-Authenticated:
+The Cloudflare Worker calls the OpenAI Responses API:
 
-- Project list/create/read/update/delete
-- Grouped item list, JSON/multipart create, read/update/delete
-- Analysis history and synchronous invocation
-- Task list/filter/update/delete
-- Idempotent demo seed
+- Model: `gpt-5.6-luna`
+- Strict structured output
+- Text and low-detail vision input
+- Bounded content, metadata, output, and deadline
+- `store: false`
+- No model-side tools
+- Server-side specialist and tool selection
+- Explicit `openai/<model>` audit IDs
+- Deterministic StoryOps fallback
 
-Every authenticated resource path applies user ownership checks. The live API
-returns CORS only for the exact frontend origin and marks responses private and
-non-cacheable.
+### Canonical IBM path
 
-## Agent summary
+The FastAPI implementation retains:
 
-Canonical FastAPI:
+- Granite Instruct Brief Agent
+- Granite Instruct Script Agent
+- Granite Vision Asset Agent
+- Deterministic Edit, Feedback, and Performance agents
+- Granite-compatible console synthesis
+- Bounded concurrent inference and timeouts
 
-- Brief Agent — IBM Granite Instruct
-- Script Agent — IBM Granite Instruct
-- Asset Agent — IBM Granite Vision
-- Edit Agent — deterministic timing analysis
-- Performance Agent — deterministic metric analysis
-- Feedback Agent — deterministic actionable-note extraction
+This path is implemented but requires valid IBM credentials and a deployed
+Python runtime before it can be described as production-active.
 
-Live Cloudflare adapter:
+## Security result
 
-- OpenAI Brief, Script, Asset, Edit, Performance, and Feedback agents
-- Structured recommendations, scores, generated tasks, deduplication, and
-  explicit `openai/<model>` audit IDs
-- Deterministic edge-rules fallback on provider timeout, refusal, invalid
-  output, or service failure
+Implemented controls:
 
-The active provider and fallback are intentionally disclosed by `/health`,
-Settings, the header badge, and every analysis `model_id`.
+- Supabase JWT validation
+- Non-anonymous identity requirement
+- Project ownership checks
+- Cross-tenant `404` behavior
+- RLS-enabled application and control-plane tables
+- Revoked browser table access
+- Private assets with signed reads
+- Image size and magic-byte validation
+- Non-asset file rejection in both APIs
+- Exact-origin CORS
+- Environment-derived CSP connect/image origins
+- Production HSTS, frame denial, referrer policy, and permissions policy
+- Development-only `unsafe-eval` for React debugging
+- Secret-only provider credentials
+- OpenAI API storage disabled
+- Prompt-injection separation for untrusted creative content
+- Sanitized provider and persistence errors
+- Git history and dependency scanning
 
-## Dependencies added or changed
+Supabase database advisors report no remaining database security or performance
+errors. The only remaining platform warning is **Leaked Password Protection
+Disabled**. Supabase exposes this feature on eligible paid plans/entitlements;
+enable it in Auth settings when available.
 
-- Edge API: `@supabase/supabase-js`, Vitest, Wrangler, TypeScript, Workers types
-- Frontend: Sonner; Node type definitions aligned to Node 22
-- No new Python runtime dependencies
+## Reliability improvements
+
+- Edge analysis removes a newly inserted analysis if generated-task inspection
+  or insertion fails.
+- Latest-analysis ordering is deterministic on timestamp and UUID.
+- Item-type changes clear stale upload state.
+- Edit/performance metadata is visible on item detail.
+- Legacy demo thumbnails render as trusted embedded image data.
+- Sign-out failures produce a visible error instead of leaving the header stuck.
+- Console failures create failed run and timeline records.
+- Event cursor pagination excludes page-boundary duplicates.
 
 ## Validation results
 
-- Python Ruff: pass
-- FastAPI tests: 33 tests after final schema validation updates
-- Edge API tests: 5 pass
-- Frontend tests: 3 pass
-- FastAPI and edge TypeScript type-checks: pass
-- Frontend route-aware type-check: pass
-- Python dependency audit: no known vulnerabilities
-- Frontend dependency audit: no known vulnerabilities
-- Edge dependency audit: no known vulnerabilities
-- Alembic graph and offline PostgreSQL SQL compilation: pass
-- Production Supabase schema assertions: pass
-- Linux Node 22.13 OpenNext build: pass
-- Cloudflare API and frontend deployments: pass
-- Production API/auth/private-asset smoke tests: pass
-- Real OpenAI text analysis: pass with `openai/gpt-5.6-luna`
-- Real OpenAI private-asset vision analysis: pass
-- OpenAI demo seed: pass with three provider-backed analyses
-- Deliberate provider-input failure: deterministic fallback pass
-- Full production browser journey: pass
+### Canonical backend
 
-The native Windows Next.js build occasionally exits with an upstream Turbopack
-`kill EPERM` process-cleanup error after successful compilation and type-check.
-The release gate uses the successful Linux/OpenNext build that matches the
-Cloudflare runtime.
+- Ruff: pass
+- Pytest: 38 pass
+- Python compilation: pass
+- Alembic graph: one head at `7e34a290f9de`
+- Full PostgreSQL SQL compilation: pass
+- Production migration: pass
+- Production RLS/grant/storage assertions: pass
 
-## Performance observations
+### Edge API
 
-- The public landing page is statically cached at the edge.
-- Auth middleware runs only for auth and personalized routes.
-- API execution is edge-local, while durable state remains in managed
-  Supabase services.
-- Analysis remains synchronous by MVP design.
-- Collection pagination and background analysis remain sensible post-MVP
-  scaling work.
+- Vitest: 8 pass
+- TypeScript: pass
+- Wrangler dry run: pass
+- Production deploy: pass
+- Public `/`, `/live`, and `/health`: pass
+- Authenticated V2 control-plane smoke: pass
+- Real OpenAI console analysis: pass
+- Real OpenAI executive artifact generation: pass
 
-## Security observations
+### Frontend
 
-- No backend secret is browser-visible or committed.
-- Application tables reject direct `anon` and `authenticated` access.
-- User assets are private and exposed through one-hour signed URLs.
-- FastAPI verifies JWT key ID, algorithm, issuer, audience, required claims,
-  expiry, UUID subject, and non-anonymous identity.
-- The live adapter validates each bearer token with Supabase Auth.
-- Tenant ownership is checked on every application resource.
-- Asset uploads use magic-byte validation and a 10 MB limit.
-- OpenAI receives bounded inputs with `store: false`; its API key is confined to
-  a Cloudflare Worker secret.
-- CSP, HSTS, frame denial, referrer policy, permissions policy, and exact CORS
-  are enabled.
-- Secret history scanning and dependency audits run in CI.
+- ESLint: pass
+- Vitest: 3 pass
+- Route-aware TypeScript: pass
+- Linux OpenNext build in Node 22.13 container: pass
+- Static generation for all routes: pass
+- Cloudflare asset and Worker deploy: pass
+- Public homepage hydration and live status: pass
+- Mobile-width overflow check: pass
+- Production screenshot capture: pass
 
-## Documentation updates
+The native Windows Next.js builder still encounters an upstream Turbopack
+`kill EPERM` process-cleanup issue after successful compilation and TypeScript.
+The release artifact was therefore built in a clean Linux Node 22.13 container,
+matching GitHub Actions and Cloudflare.
 
-Updated:
+## Public-repository polish
 
-- `AGENTS.md`
-- `README.md`
-- `CHANGELOG.md`
-- `docs/architecture.md`
-- `docs/implementation-plan.md`
-- `docs/tasks.md`
-- `docs/demo-walkthrough.md`
-- `docs/release-report.md`
+Added or updated:
 
-## Remaining external work
+- Premium root README
+- Mermaid runtime, AI sequence, and data-model diagrams
+- Detailed IBM Bob lifecycle evidence
+- Detailed AI implementation explanation
+- Complete environment-variable reference
+- Local setup and Cloudflare deployment instructions
+- Deployment and rollback runbook
+- Security policy
+- Contributing guide
+- Vector hero artwork
+- Production homepage screenshot
+- V2 architecture and task tracking
+- Release changelog and package versions
 
-1. Optionally obtain watsonx.ai credentials and deploy the canonical FastAPI
-   service to demonstrate the retained Granite provider path.
-2. Publish the public demo video URL.
-3. Exercise a real email-delivery confirmation link with an inbox under the
-   final project domain.
+## IBM Bob evidence
 
-These are account/credential or submission-media gates, not missing repository
-implementations. The current production experience uses disclosed OpenAI
-inference with explicit deterministic fallback.
+IBM Bob is documented as the SDLC partner across:
 
-## IBM AI Builders Challenge readiness
+- Problem selection and brainstorming
+- Architecture and data modelling
+- Dependency-ordered planning
+- Frontend, backend, migration, and test generation
+- Auth, deployment, storage, and provider debugging
+- Refactoring and contract alignment
+- UI iteration and accessibility
+- Release hardening and documentation
 
-Strengths:
+Repository evidence is stored in `.bob/`, `AGENTS.md`, `docs/`, tests, CI, and
+release artifacts. Genuine Bob session screenshots or exports remain part of
+the final external submission media pack.
 
-- Clear creative-operations problem and seven-stage workflow
-- Six specialized agents with structured recommendations and task handoff
-- Production deployment, persistence, private assets, and complete demo path
-- Extensive Bob planning/agent/review artifacts
-- Strong architecture, CI, security, and reproducible documentation
+## Remaining submission-media work
 
-Provider disclosure:
+1. Publish the final demo video or GIF URL.
+2. Add genuine IBM Bob session screenshots/exports if required by the challenge.
+3. Optionally enable Supabase leaked-password protection on an eligible plan.
+4. Optionally deploy the canonical FastAPI/Granite runtime with valid IBM
+   credentials.
 
-- IBM Bob remains the primary SDLC tool. OpenAI is the disclosed additional AI
-  provider allowed by the published FAQ. The repository retains the real
-  watsonx implementation without claiming it is active in production.
+These are external media, entitlement, or credential gates. The V2 Cloudflare,
+Supabase, and OpenAI production workflow is deployed and verified.

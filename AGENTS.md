@@ -9,10 +9,19 @@ This file provides guidance to agents when working with code in this repository.
 **Status:** StoryOps Studio is live end to end. The Next.js frontend runs at
 `https://storyops.ukexe06.workers.dev`, the production REST adapter runs at
 `https://storyops-api.ukexe06.workers.dev`, and the Supabase schema, Auth,
-private Storage bucket, dashboard, pipeline, analyses, and tasks are verified.
+private Storage bucket, dashboard, pipeline, analyses, tasks, AI console,
+artifacts, workflow traces, and event timeline are verified.
 The live adapter uses OpenAI with explicit model IDs and deterministic
 edge-agent fallback. The canonical FastAPI service contains the full Granite
 integration for future IBM credentials.
+
+**V2 production release:** StoryOps remains the first creative vertical while IP
+Foundry adds the reusable intelligence control plane. The release contains an
+interactive product homepage, project AI operating console, durable
+conversations/messages, workflow runs/steps, reusable artifacts, and an
+append-only workspace event timeline. Production runs migrations through
+`7e34a290f9de` and both v2.0.0 Workers. Roadmap features must never be presented
+as live behavior.
 
 ## Planned Stack
 
@@ -22,7 +31,7 @@ integration for future IBM credentials.
 | Backend | FastAPI (canonical) + Cloudflare Worker production adapter |
 | Database | PostgreSQL via Supabase or IBM Cloud Databases |
 | AI/LLM | OpenAI production inference + watsonx.ai/Granite canonical path |
-| Orchestration | watsonx Orchestrate / Langflow-style multi-agent graphs |
+| Orchestration | Persisted control-plane runs/steps; durable Agent + Workflow runtime planned |
 | CI/CD | GitHub Actions + IBM Bob CLI hooks |
 
 ## Intended Repository Structure
@@ -63,6 +72,11 @@ The canonical FastAPI path retains IBM Granite and watsonx:
 projects → items (stage is a validated Idea→…→Analyze string constant)
          → analyses (agent_type, summary, recommendations: JSON, score_metrics)
          → tasks (AI-generated, optionally linked to items)
+
+projects → conversations → conversation_messages
+         → workflow_runs → workflow_steps
+         → artifacts
+         → workspace_events (append-only correlation and causation ledger)
 ```
 
 ## Multi-Agent Pipeline
@@ -88,5 +102,13 @@ Six conceptual agents, each triggered by pipeline events:
 - IBM Bob **must be visibly used** as the primary dev tool — judges look for this
 - OpenAI is allowed only as a clearly disclosed additional AI provider
 - Architecture must emphasize **agentic/multi-agent workflows**, not single prompts
+- Show objectives, tools, steps, evidence, confidence, failures, and outcomes;
+  never claim to expose private model chain-of-thought
+- Every control-plane mutation must preserve ownership, model/tool audit IDs,
+  correlation, and an append-only timeline event
+- Replay creates a new correlated run; it never edits historical events
+- Label capabilities honestly as Live, V2 foundation, or Roadmap
 - Keep MVP scope tight: 2–3 agents + manual data ingestion; watsonx Orchestrate is stretch
+- Read `docs/ip-foundry-v2-architecture.md` before extending the control plane,
+  timeline, artifacts, semantic intelligence, Atlas, or repository generation
 - Reference `docs/research.md` for full scoring rationale, winning patterns, and idea database

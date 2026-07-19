@@ -3,6 +3,17 @@
 > **Source document:** `docs/research.md`
 > **Goal:** Build a competition-grade MVP of StoryOps Studio for the IBM AI Builders Challenge (July 2026, *Reimagine Creative Industries with AI*).
 
+## V2 extension
+
+The original MVP plan below remains the release record for v1.2.0. The
+production IP Foundry control-plane extension released in v2.0.0 is specified in
+[ip-foundry-v2-architecture.md](ip-foundry-v2-architecture.md) and tracked at
+the top of [tasks.md](tasks.md). Its deployed foundation adds the
+interactive homepage, operating console, conversations, workflow runs and
+steps, reusable artifacts, and append-only workspace timeline. Durable
+execution, embeddings, semantic discovery, Atlas persistence, repository
+generation, and impact forecasting remain dependency-ordered roadmap work.
+
 ---
 
 ## Top-Level Overview

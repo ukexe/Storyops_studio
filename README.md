@@ -1,162 +1,554 @@
-# StoryOps Studio
+<div align="center">
 
-[![Release](https://img.shields.io/badge/release-v1.2.0-111827)](#release-status)
-[![Backend CI](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml)
-[![Frontend CI](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml)
-[![Live on Cloudflare](https://img.shields.io/badge/live-Cloudflare%20Workers-f97316)](https://storyops.ukexe06.workers.dev)
-[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb)](LICENSE)
+<img src="docs/assets/storyops-hero.svg" alt="StoryOps Studio — IP Foundry V2" width="100%" />
+
+# StoryOps Studio — IP Foundry V2
+
+### An explainable AI operating system for creative production and reusable intelligence
+
+[![Release](https://img.shields.io/badge/release-v2.0.0-111827?style=flat-square)](#release-status)
+[![Backend CI](https://img.shields.io/github/actions/workflow/status/ukexe/Storyops_studio/backend-ci.yml?branch=main&label=backend%20CI&style=flat-square)](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://img.shields.io/github/actions/workflow/status/ukexe/Storyops_studio/frontend-ci.yml?branch=main&label=frontend%20CI&style=flat-square)](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-f38020?logo=cloudflare&logoColor=white&style=flat-square)](https://storyops.ukexe06.workers.dev)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white&style=flat-square)](frontend)
+[![FastAPI](https://img.shields.io/badge/FastAPI-canonical-009688?logo=fastapi&logoColor=white&style=flat-square)](backend)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth%20%2B%20Storage-3fcf8e?logo=supabase&logoColor=white&style=flat-square)](https://supabase.com)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2563eb?style=flat-square)](LICENSE)
+
+[Live application](https://storyops.ukexe06.workers.dev) ·
+[Live API health](https://storyops-api.ukexe06.workers.dev/health) ·
+[Architecture](docs/architecture.md) ·
+[V2 design](docs/ip-foundry-v2-architecture.md) ·
+[Demo walkthrough](docs/demo-walkthrough.md)
+
+Built for the **IBM AI Builders Challenge 2026** — *Reimagine Creative Industries with AI*
+
+</div>
+
+---
+
+## Overview
 
 StoryOps Studio is an AI-powered Creative Operations Command Center for
-YouTube teams, agencies, and in-house creative organizations. It brings briefs,
-scripts, visual assets, edits, feedback, publishing, and performance signals
-into one production pipeline.
+YouTube teams, agencies, studios, and in-house creative organizations. It
+brings briefs, scripts, visual assets, edits, reviewer feedback, publishing
+readiness, and performance signals into one governed workflow.
 
-Instead of generating finished creative work from one prompt, StoryOps uses
-specialized agents to inspect each stage. The agents identify missing brief
-information, script retention risks, visual brand problems, edit pacing issues,
-performance opportunities, and actionable reviewer feedback. Their structured
-recommendations become linked tasks that teams can manage through completion.
+IP Foundry V2 extends that workflow with an enterprise control plane:
 
-StoryOps Studio was designed for the IBM AI Builders Challenge 2026 theme
-**Reimagine Creative Industries with AI**.
+- A project-aware AI operating console
+- Durable conversations, workflow runs, and transparent steps
+- Reusable report and architecture artifacts
+- An append-only workspace event timeline
+- Correlation, provenance, confidence, model, and tool audit data
+- Replay planning that creates a new run instead of rewriting history
 
-- Live frontend: [storyops.ukexe06.workers.dev](https://storyops.ukexe06.workers.dev)
-- Live API: [storyops-api.ukexe06.workers.dev](https://storyops-api.ukexe06.workers.dev/health)
-- GitHub: [ukexe/Storyops_studio](https://github.com/ukexe/Storyops_studio)
-- Release: [v1.2.0](https://github.com/ukexe/Storyops_studio/releases/tag/v1.2.0)
+The result is not a generic chat interface. StoryOps turns creative evidence
+into structured analysis, accountable work, reusable knowledge, and measurable
+operational decisions.
 
-## Product capabilities
+## Release status
 
-- Supabase email/password authentication and protected workspaces
-- Seven-stage creative pipeline:
-  `Idea → Script → Assets → Edit → Feedback → Publish → Analyze`
-- Text and image item ingestion
-- OpenAI text and vision analysis in the live production API
-- IBM Granite brief, script, and vision agents in the canonical FastAPI service
-- Deterministic fallback agents when the hosted provider is unavailable
-- Structured scores and priority-labelled recommendations
-- AI-generated task board with optimistic status updates
-- One-click, idempotent judging demo seed
-- Read-only production service and security settings
-- Responsive and keyboard-accessible Next.js interface
+**v2.0.0 is live.** The production schema is applied through
+`7e34a290f9de`; API Worker v2.0.0 and the Linux-built OpenNext frontend are
+deployed and production-smoke-tested. See
+[`docs/release-report.md`](docs/release-report.md) for version IDs and evidence.
 
-## Architecture
+## The problem
+
+Creative delivery is fragmented:
+
+- Briefs live in documents.
+- Scripts live in separate editors.
+- Thumbnails and visual assets live in storage tools.
+- Edit decisions stay inside NLEs.
+- Feedback is scattered across email and chat.
+- Performance metrics arrive after the production context is lost.
+
+Most AI products generate more content but do not solve coordination, quality
+control, traceability, or learning. Teams repeatedly discover missing
+requirements late, make expensive revisions, lose institutional knowledge, and
+cannot explain why an AI recommendation should be trusted.
+
+## The solution
+
+StoryOps provides one continuous workflow:
 
 ```text
-Browser → Cloudflare Workers / Next.js → Cloudflare Worker REST adapter
-                                             ├─ Supabase Postgres
-                                             ├─ Supabase private Storage
-                                             └─ OpenAI Responses API
-
-Canonical FastAPI service → Supabase + IBM watsonx.ai / Granite
+Creative input
+  → specialized analysis
+  → evidence-backed recommendation
+  → linked team task
+  → reusable artifact
+  → auditable event timeline
+  → future performance learning
 ```
 
-The browser authenticates through Supabase Auth and forwards a JWT to the live
-REST adapter. The adapter validates the session with Supabase Auth, applies
-project ownership checks, and accesses Postgres and private Storage with a
-backend-only secret. The canonical FastAPI implementation provides the same
-contract using JWT/JWKS validation and async SQLAlchemy.
+Humans retain creative judgment. AI identifies risk, structures evidence,
+recommends action, and reduces coordination work.
 
-Application tables are protected from direct browser Data API access. The
-hardening migration enables RLS, revokes browser-role privileges, and adds
-database constraints.
+## Key features
 
-See [docs/architecture.md](docs/architecture.md) for component boundaries,
-data flow, security controls, agent dispatch, deployment, and failure behavior.
+### Production workflow
 
-## Technology
+- Seven-stage pipeline: `Idea → Script → Assets → Edit → Feedback → Publish → Analyze`
+- Text, image, edit-timeline, feedback, and performance-metric ingestion
+- Private image storage with signed previews
+- Brief, Script, Asset, Edit, Feedback, and Performance analysis modes
+- Structured scores and priority-labelled recommendations
+- Generated tasks linked to their source item
+- Optimistic task status changes with rollback
+- One-click, authenticated, idempotent judging demo
 
-- Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui
-- Backend: FastAPI/Python canonical service plus a TypeScript Cloudflare Worker
-  production adapter
-- Identity and storage: Supabase Auth and Storage
-- Database: Supabase PostgreSQL
-- AI: OpenAI Responses API in production; IBM watsonx.ai/Granite in the
-  canonical FastAPI service; deterministic edge fallback
-- Deployment: Cloudflare Workers for the frontend and live API; Render Blueprint
-  retained for the full Python/watsonx runtime
-- CI: GitHub Actions
+### IP Foundry V2 control plane
 
-## AI providers
+- Persistent project conversations
+- Context-aware AI operating console
+- Transparent workflow runs and steps
+- Typed tool-call receipts
+- Model and deterministic-fallback audit IDs
+- Confidence and recommended next actions
+- Versioned executive and architecture artifacts
+- Searchable workspace timeline
+- Correlation and causation across chat, runs, tools, and artifacts
+- Replay-plan handoff without mutating historical events
 
-The live Cloudflare API uses OpenAI for structured text and vision analysis.
-Requests use strict JSON schemas, bounded input/output, low-detail image input,
-and `store: false`. Every persisted analysis records an
-`openai/<model-id>` audit identifier. If OpenAI is unavailable, StoryOps uses
-its deterministic rules and records a `storyops/edge-*` identifier.
+### Trust and operations
 
-Production Worker configuration:
+- Supabase JWT authentication
+- Per-project ownership checks
+- RLS-enabled application tables
+- Revoked browser table privileges
+- Private Storage bucket and signed reads
+- Exact-origin CORS
+- Bounded model inputs and outputs
+- OpenAI API storage disabled with `store: false`
+- Explicit provider disclosure and fallback behavior
+- Dependency audits, secret-history scanning, linting, tests, and bundle checks
 
-- Secret: `OPENAI_API_KEY`
-- Model: `OPENAI_MODEL` — currently `gpt-5.6-luna`
+## Why StoryOps is different
 
-Never expose the OpenAI key through `NEXT_PUBLIC_*` values or commit it to the
-repository.
+1. **AI operates the workflow, not just a text box.**  
+   Model output becomes structured analyses, tasks, artifacts, workflow steps,
+   UI actions, and timeline events.
 
-### IBM Granite and watsonx.ai
+2. **Specialists are matched to creative evidence.**  
+   A brief is evaluated differently from a script, image, edit timeline,
+   performance record, or reviewer note.
 
-The canonical FastAPI AI agents call IBM watsonx.ai through one SDK wrapper:
+3. **Every result identifies its execution path.**  
+   Analyses and console messages retain agent type, model ID, tools,
+   confidence, run IDs, and correlation metadata.
 
-- Brief Agent — objectives, constraints, missing information, clarity score
-- Script Agent — hook strength, pacing, CTA, retention risk
-- Asset Agent — brand consistency, logo integrity, visual issues
+4. **Failure remains useful and visible.**  
+   Production inference falls back to deterministic StoryOps rules with a
+   distinct audit ID rather than silently pretending the hosted model ran.
 
-The wrapper caches model interfaces, limits concurrent inference, applies
-request deadlines, and sanitizes SDK failures.
+5. **The IBM path is real, not a slide.**  
+   The canonical FastAPI service contains working Granite Instruct and Granite
+   Vision integrations through `ibm-watsonx-ai`.
 
-Rules-based agents cover edit timing, performance metrics, and reviewer
-feedback without pretending to call a model. `/health`, Settings, and analysis
-model IDs always disclose the active provider.
+6. **The platform is honest about maturity.**  
+   The homepage labels capabilities as **Live**, **V2 foundation**, or
+   **Roadmap**. Semantic search, persisted Atlas graphs, and repository
+   generation are not marketed as deployed features.
 
-Required IBM configuration:
+## Product tour
 
-- `WATSONX_API_KEY`
-- `WATSONX_PROJECT_ID`
-- `WATSONX_URL` — normally `https://us-south.ml.cloud.ibm.com`
+1. Register or sign in.
+2. Select **Seed demo** on the dashboard.
+3. Inspect the seven-stage creative pipeline.
+4. Open the Brief, Script, and Asset analyses.
+5. Review scores, recommendations, model IDs, and generated tasks.
+6. Move a task to **In progress**.
+7. Open **AI console** and request a workspace analysis or executive report.
+8. Inspect the run trace, selected tools, confidence, and generated artifact.
+9. Open **Timeline** to trace the complete workflow and prepare a replay plan.
+
+The full judging script is documented in
+[`docs/demo-walkthrough.md`](docs/demo-walkthrough.md).
+
+---
+
+## AI in our solution
+
+### What the AI actually does
+
+StoryOps uses AI to inspect creative and operational evidence:
+
+- **Brief Agent** — extracts objectives, constraints, information gaps, and
+  clarity.
+- **Script Agent** — evaluates opening hook, pacing, CTA, narrative clarity,
+  and retention risk.
+- **Asset Agent** — analyzes hierarchy, legibility, brand consistency, and
+  logo integrity from private images.
+- **Edit Agent** — evaluates scene duration and pacing from structured timeline
+  metadata.
+- **Feedback Agent** — converts reviewer notes into actionable work.
+- **Performance Agent** — interprets views, retention, and click-through rate.
+- **Operating-console specialists** — synthesize current workspace evidence,
+  explain confidence, propose next actions, and create reusable executive or
+  architecture artifacts.
+
+### Why AI is necessary
+
+These inputs are heterogeneous and contextual. A fixed form can store them, but
+cannot consistently identify ambiguity, narrative risk, visual quality,
+cross-stage implications, or the highest-leverage next action. AI allows
+StoryOps to interpret unstructured text and images while deterministic
+validation and rules protect the workflow boundary.
+
+### Why this is more than a ChatGPT wrapper
+
+The model never receives an unconstrained prompt and returns disposable prose.
+The application:
+
+1. Authenticates and authorizes the user.
+2. Loads only the owned project context.
+3. Selects a specialist and bounded local tools.
+4. Builds a typed, size-limited context snapshot.
+5. Separates untrusted creative content from system instructions.
+6. Requests strict structured output.
+7. Validates summaries, recommendations, metrics, confidence, and artifact data.
+8. Persists model and fallback audit IDs.
+9. Converts recommendations into linked tasks.
+10. Persists console turns as runs, steps, messages, artifacts, and events.
+11. Exposes the execution trace to the user.
+12. Falls back to deterministic logic when hosted inference fails.
+
+### Prompt engineering strategy
+
+Prompts are:
+
+- Specialist-specific
+- Explicit about output schemas
+- Bounded by content and metadata limits
+- Grounded in the current item or workspace snapshot
+- Instructed to treat creative content as untrusted data
+- Required to acknowledge missing evidence
+- Optimized for concise, actionable recommendations
+- Version-auditable through model/ruleset identifiers
+
+The production Worker uses the OpenAI Responses API with strict JSON Schema,
+low reasoning effort for predictable latency, `store: false`, and no model-side
+tools. Server-side code owns tool selection and mutation policy.
+
+### Context handling
+
+Item analysis receives one persisted item and its validated metadata. The
+operating console assembles a bounded snapshot containing:
+
+- Project identity and description
+- Current item, stage, and type distribution
+- Latest available analyses and model IDs
+- Open and completed tasks
+- Current page and inspector context
+- Active conversation identity
+
+The context boundary is project-scoped and enforced server-side.
+
+### Model interaction and response pipeline
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as Next.js workspace
+    participant API as Authenticated API
+    participant Context as Context assembler
+    participant Agent as Specialist agent
+    participant Model as OpenAI / Granite
+    participant DB as Supabase Postgres
+
+    User->>UI: Analyze, explain, or generate
+    UI->>API: JWT + command + page context
+    API->>API: Verify project ownership
+    API->>DB: Create conversation message and workflow run
+    API->>Context: Load bounded workspace evidence
+    Context-->>Agent: Typed snapshot
+    Agent->>Model: Structured specialist request
+    Model-->>Agent: Schema-constrained response
+    Agent->>Agent: Validate or apply deterministic fallback
+    Agent->>DB: Persist steps, message, artifact, and events
+    API-->>UI: Result + tools + confidence + UI intents
+    UI-->>User: Explainable response and reusable output
+```
+
+### Provider strategy
+
+| Runtime | Provider | Purpose | Audit identifier |
+|---|---|---|---|
+| Production edge API | OpenAI Responses API | Structured text and vision analysis | `openai/<model>` |
+| Canonical FastAPI | IBM watsonx.ai / Granite | IBM enterprise text and vision path | `ibm/granite-*` |
+| Both runtimes | StoryOps deterministic rules | Resilient fallback and non-model analysis | `storyops/*` |
+
+Production currently uses the model configured by `OPENAI_MODEL`. Secrets stay
+in Cloudflare Worker secret storage and never enter browser-visible variables.
+
+---
 
 ## IBM Bob usage
 
-IBM Bob is represented as an SDLC partner across the repository:
+IBM Bob was used as an SDLC partner across the complete project lifecycle, not
+as a one-time code generator.
 
-- Plan mode — research, architecture, schema, milestones, and dependency-ordered
-  tasks in `docs/`
-- Agent mode — application source, migrations, tests, CI, and deployment
-  artifacts
-- Ask mode — repository audits, API contract validation, security review, and
-  release hardening
+| Development activity | How Bob contributed | Repository evidence |
+|---|---|---|
+| Problem selection and brainstorming | Compared creative-industry problems, judged feasibility, and prioritized creative operations over another generation tool. | [`docs/research.md`](docs/research.md) |
+| Project planning | Converted the product concept into milestones, dependencies, acceptance checks, and hour-sized tasks. | [`docs/implementation-plan.md`](docs/implementation-plan.md), [`docs/tasks.md`](docs/tasks.md) |
+| System architecture | Designed the Next.js/FastAPI/Supabase boundaries, agent contract, provider separation, private asset flow, and V2 control plane. | [`docs/architecture.md`](docs/architecture.md), [`docs/ip-foundry-v2-architecture.md`](docs/ip-foundry-v2-architecture.md) |
+| Code generation | Scaffolded models, schemas, routers, frontend pages, typed API clients, agent implementations, migrations, and deployment configuration. | `frontend/`, `backend/` |
+| Debugging | Investigated auth redirects, API-contract drift, private asset delivery, provider failures, Cloudflare runtime behavior, CSP, and Windows build issues. | Tests, changelog, architecture failure notes |
+| Refactoring | Centralized agent dispatch, isolated provider clients, extracted the V2 control-plane service, and aligned edge/FastAPI contracts. | `backend/app/agents/dispatcher.py`, `backend/app/services/`, `backend/cloudflare/src/control-plane.ts` |
+| Documentation | Produced research, architecture, implementation, deployment, release, demo, and submission documentation from the working code. | `docs/`, `README.md` |
+| Testing | Generated focused tests for authentication, ownership, storage, agents, demo seeding, API contracts, events, artifacts, fallback, and cursor pagination. | `backend/tests/`, `backend/cloudflare/src/index.test.ts`, `frontend/lib/navigation.test.ts` |
+| UI improvements | Iterated from a basic landing page into an interactive architecture and capability experience, then added the operating console and timeline. | `frontend/components/marketing/`, `frontend/components/control-plane/` |
+| Developer productivity | Maintained project-specific rules, repeatable validation commands, explicit constraints, and implementation handoff notes. | `AGENTS.md`, `.bob/`, CI workflows |
 
-Bob-specific rules are stored under `.bob/`. The architecture document includes
-a detailed [IBM Bob usage record](docs/architecture.md#ibm-bob-usage).
-Challenge submission material should include genuine Bob session screenshots or
-exports in addition to repository artifacts.
+Bob-specific guidance is stored under `.bob/` for planning, implementation, and
+review modes. These artifacts document the intended workflow and constraints;
+they are not vendor telemetry. The final challenge media pack should include
+genuine Bob screenshots or exports where the submission rules require them.
 
-## Quick start
+---
+
+## System architecture
+
+### Runtime architecture
+
+```mermaid
+flowchart TB
+    User([User / Creative Team])
+
+    subgraph CF[Cloudflare Global Network]
+        FE[Next.js 16 Frontend<br/>OpenNext Worker]
+        API[TypeScript REST API Worker<br/>Auth · Validation · Control Plane]
+        OBS[Workers Logs and Observability]
+    end
+
+    subgraph SB[Supabase]
+        AUTH[Supabase Auth<br/>Email · JWT · Session]
+        DB[(PostgreSQL<br/>Projects · Items · Analyses · Tasks<br/>Conversations · Runs · Artifacts · Events)]
+        STORAGE[(Private Storage<br/>Signed Image Reads)]
+        RT[Realtime-ready Event Projection<br/>Current UI refreshes after mutations]
+    end
+
+    subgraph AI[AI Processing]
+        ROUTER[Specialist Router / Orchestrator]
+        OPENAI[OpenAI Responses API<br/>Production Text + Vision]
+        RULES[Deterministic StoryOps Rules<br/>Audited Fallback]
+    end
+
+    subgraph IBM[Canonical IBM Runtime]
+        FASTAPI[FastAPI + SQLAlchemy]
+        GRANITE[IBM watsonx.ai<br/>Granite Instruct + Vision]
+    end
+
+    User -->|HTTPS| FE
+    FE -->|Register / Sign in| AUTH
+    AUTH -->|Session + JWT| FE
+    FE -->|Bearer JWT · Typed REST| API
+    FE -->|Multipart file upload| API
+    API -->|Validate JWT| AUTH
+    API -->|Owned CRUD + event writes| DB
+    API -->|Upload / signed URL| STORAGE
+    API --> ROUTER
+    ROUTER -->|Structured request| OPENAI
+    OPENAI -->|Schema-constrained response| ROUTER
+    ROUTER -->|Provider failure| RULES
+    ROUTER -->|Analysis · tasks · run trace| DB
+    DB -.->|Event timeline refresh| FE
+    DB -. future realtime subscription .-> RT
+    RT -.-> FE
+    API --> OBS
+    FE --> OBS
+
+    FASTAPI --> DB
+    FASTAPI --> STORAGE
+    FASTAPI --> GRANITE
+```
+
+### Security boundary
+
+```text
+Browser-visible:
+  Supabase project URL
+  Supabase publishable key
+  StoryOps API URL
+
+Backend-only:
+  Supabase secret key
+  Database connection string
+  OpenAI API key
+  watsonx API key and project ID
+```
+
+The browser cannot access application tables directly. Backend runtimes verify
+the Supabase identity, enforce project ownership, and use privileged credentials
+only inside trusted server environments.
+
+### V2 data model
+
+```mermaid
+erDiagram
+    PROJECTS ||--o{ ITEMS : contains
+    ITEMS ||--o{ ANALYSES : receives
+    PROJECTS ||--o{ TASKS : owns
+    ITEMS o|--o{ TASKS : links
+
+    PROJECTS ||--o{ CONVERSATIONS : scopes
+    CONVERSATIONS ||--o{ CONVERSATION_MESSAGES : contains
+    PROJECTS ||--o{ WORKFLOW_RUNS : executes
+    CONVERSATIONS o|--o{ WORKFLOW_RUNS : initiates
+    WORKFLOW_RUNS ||--o{ WORKFLOW_STEPS : traces
+    PROJECTS ||--o{ ARTIFACTS : owns
+    CONVERSATIONS o|--o{ ARTIFACTS : produces
+    PROJECTS ||--o{ WORKSPACE_EVENTS : records
+    WORKFLOW_RUNS o|--o{ WORKSPACE_EVENTS : correlates
+    ARTIFACTS o|--o{ WORKSPACE_EVENTS : emits
+```
+
+See [`docs/architecture.md`](docs/architecture.md) for component boundaries,
+failure behavior, security controls, and provider details.
+
+## Technology stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui, Radix UI |
+| Production API | Cloudflare Workers, TypeScript, Supabase JS |
+| Canonical API | FastAPI, Python 3.11, SQLAlchemy 2, Alembic |
+| Authentication | Supabase Auth with SSR-compatible sessions |
+| Database | Supabase PostgreSQL |
+| File storage | Supabase private Storage with signed URLs |
+| Production AI | OpenAI Responses API with structured text and vision output |
+| IBM AI path | IBM watsonx.ai with Granite Instruct and Granite Vision |
+| Resilience | Deterministic StoryOps analysis and control-plane fallbacks |
+| Deployment | Cloudflare Workers + OpenNext; optional Docker/Render FastAPI path |
+| CI/CD | GitHub Actions, Ruff, Pytest, Vitest, TypeScript, ESLint, Wrangler |
+| SDLC partner | IBM Bob |
+
+## Repository structure
+
+```text
+StoryOps-Studio/
+├── .bob/                         # IBM Bob mode-specific guidance
+├── .github/workflows/            # Backend and frontend CI
+├── backend/
+│   ├── app/
+│   │   ├── agents/               # Granite and deterministic specialists
+│   │   ├── models/               # SQLAlchemy domain/control-plane models
+│   │   ├── routers/              # Versioned FastAPI endpoints
+│   │   ├── schemas/              # Pydantic request/response contracts
+│   │   └── services/             # Control-plane and event services
+│   ├── cloudflare/
+│   │   └── src/                  # Production Worker API and OpenAI path
+│   ├── demo/                     # Judging fixtures
+│   ├── migrations/               # Alembic schema history
+│   └── tests/                    # Backend unit/integration tests
+├── docs/
+│   ├── assets/                   # README and submission media
+│   ├── architecture.md
+│   ├── ip-foundry-v2-architecture.md
+│   ├── demo-walkthrough.md
+│   ├── implementation-plan.md
+│   ├── release-report.md
+│   ├── research.md
+│   └── tasks.md
+├── frontend/
+│   ├── app/                      # Next.js App Router pages
+│   ├── components/
+│   │   ├── control-plane/        # Console trace, artifacts, timeline
+│   │   ├── marketing/            # Interactive public product experience
+│   │   ├── pipeline/
+│   │   └── ui/
+│   ├── lib/                      # Typed API and environment boundaries
+│   ├── types/
+│   └── utils/supabase/
+├── AGENTS.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── SECURITY.md
+└── render.yaml
+```
+
+---
+
+## Getting started
 
 ### Prerequisites
 
 - Python 3.11
 - Node.js 22.13 or newer
 - npm
-- Supabase project
-- IBM Cloud account with a watsonx.ai project and model entitlement
+- A Supabase project
+- Optional: IBM Cloud account with a watsonx.ai project and model entitlement
+- Optional: Docker for canonical backend container validation
+- Optional: Cloudflare account for production deployment
 
-Docker is optional for local development and required only for container
-validation.
+### 1. Clone the repository
 
-### 1. Configure Supabase
+```bash
+git clone https://github.com/ukexe/Storyops_studio.git
+cd Storyops_studio
+```
+
+### 2. Configure Supabase
 
 1. Create a Supabase project.
-2. Copy the project URL, publishable key, secret key, and session-pooler
-   connection string.
-3. Run Alembic; migrations create the private `assets` Storage bucket.
-4. Add local and deployed `/auth/confirm` URLs to Auth redirect URLs.
-5. Do not grant browser roles access to the four application tables; Alembic
-   applies the restrictive table policy.
+2. Copy the project URL, publishable key, secret key, and session-pooler URL.
+3. Add `http://localhost:3000/auth/confirm` to Auth redirect URLs.
+4. Create `backend/.env` from the example.
+5. Apply all Alembic migrations. They create the application tables, V2
+   control-plane records, security constraints, and private `assets` bucket.
 
-Use the session pooler on port `5432` for the persistent Render backend. The
-username has the form `postgres.<project-ref>`.
+### 3. Configure environment variables
 
-### 2. Start the backend
+#### Canonical backend — `backend/.env`
+
+Copy [`backend/.env.example`](backend/.env.example):
+
+```dotenv
+WATSONX_API_KEY=your-watsonx-api-key
+WATSONX_PROJECT_ID=your-watsonx-project-id
+WATSONX_URL=https://us-south.ml.cloud.ibm.com
+
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+SUPABASE_SECRET_KEY=your-secret-key
+SUPABASE_JWKS_URL=https://your-project.supabase.co/auth/v1/.well-known/jwks.json
+
+DATABASE_URL=postgresql+asyncpg://postgres.project-ref:password@pooler-host:5432/postgres
+ENVIRONMENT=development
+CORS_ORIGINS=http://localhost:3000
+ALLOW_ANONYMOUS_DEMO_SEED=false
+```
+
+#### Frontend — `frontend/.env.local`
+
+Copy [`frontend/.env.local.example`](frontend/.env.local.example):
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+```
+
+These values are intentionally browser-visible. Never use `NEXT_PUBLIC_` for a
+database password, Supabase secret key, OpenAI key, or watsonx key.
+
+#### Edge API — `backend/cloudflare/.dev.vars`
+
+Copy [`backend/cloudflare/.dev.vars.example`](backend/cloudflare/.dev.vars.example):
+
+```dotenv
+SUPABASE_SECRET_KEY=your-secret-key
+OPENAI_API_KEY=your-openai-api-key
+```
+
+Non-secret Worker values live in
+[`backend/cloudflare/wrangler.jsonc`](backend/cloudflare/wrangler.jsonc).
+
+### 4. Start the canonical backend
 
 ```bash
 cd backend
@@ -166,127 +558,71 @@ python -m venv .venv
 Activate the environment:
 
 ```bash
-# macOS/Linux
+# macOS / Linux
 source .venv/bin/activate
 
 # Windows PowerShell
 .venv\Scripts\Activate.ps1
 ```
 
-Install and configure:
+Install, migrate, and run:
 
 ```bash
 python -m pip install -r requirements.txt -r requirements-dev.txt
-cp .env.example .env
-```
-
-On Windows PowerShell, use:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Fill every required value in `backend/.env`, then run:
-
-```bash
 python -m alembic upgrade head
 python -m uvicorn app.main:app --reload
 ```
 
-The API is available at `http://localhost:8000`; OpenAPI documentation is at
-`http://localhost:8000/docs`.
+API: `http://localhost:8000`  
+OpenAPI: `http://localhost:8000/docs`
 
-### 3. Start the frontend
+### 5. Start the frontend
 
 ```bash
 cd frontend
 npm ci
-cp .env.local.example .env.local
 npm run dev
 ```
-
-On Windows PowerShell:
-
-```powershell
-Copy-Item .env.local.example .env.local
-npm run dev
-```
-
-Fill the frontend values before starting:
-
-```dotenv
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
-```
-
-`NEXT_PUBLIC_API_URL` is optional for the public homepage and Supabase Auth. It
-is required for the full StoryOps dashboard and agent workflow.
 
 Open `http://localhost:3000`.
 
-## Environment reference
+## Environment variable reference
 
-Backend secrets:
+| Variable | Runtime | Visibility | Required | Purpose |
+|---|---|---:|---:|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Frontend | Public | Yes | Auth and signed asset host |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Frontend | Public | Yes | Supabase browser authentication |
+| `NEXT_PUBLIC_API_URL` | Frontend | Public | Yes | Versioned StoryOps REST API |
+| `SUPABASE_URL` | APIs | Server | Yes | Supabase project endpoint |
+| `SUPABASE_PUBLISHABLE_KEY` | FastAPI | Server | Yes | Canonical Supabase configuration |
+| `SUPABASE_SECRET_KEY` | APIs | Secret | Yes | Privileged PostgREST and Storage access |
+| `SUPABASE_JWKS_URL` | FastAPI | Server | Yes | JWT verification keys |
+| `DATABASE_URL` | FastAPI/Alembic | Secret | Yes | PostgreSQL session-pooler connection |
+| `OPENAI_API_KEY` | Edge API | Secret | Production | OpenAI Responses API |
+| `OPENAI_MODEL` | Edge API | Server | Yes | Explicit production model selection |
+| `WATSONX_API_KEY` | FastAPI | Secret | Canonical path | IBM Cloud authentication |
+| `WATSONX_PROJECT_ID` | FastAPI | Secret | Canonical path | watsonx.ai project |
+| `WATSONX_URL` | FastAPI | Server | Yes | watsonx.ai regional endpoint |
+| `CORS_ORIGINS` | APIs | Server | Yes | Exact allowed frontend origins |
+| `ENVIRONMENT` | FastAPI | Server | Yes | Development, test, or production mode |
+| `ALLOW_ANONYMOUS_DEMO_SEED` | FastAPI | Server | Yes | Must remain `false` in production |
 
-- `DATABASE_URL`
-- `SUPABASE_SECRET_KEY`
-- `WATSONX_API_KEY`
-- `WATSONX_PROJECT_ID`
+---
 
-Backend runtime configuration:
+## Testing and validation
 
-- `SUPABASE_URL`
-- `SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_JWKS_URL`
-- `WATSONX_URL`
-- `ENVIRONMENT`
-- `CORS_ORIGINS` — comma-separated exact frontend origins
-- `ALLOW_ANONYMOUS_DEMO_SEED` — keep `false` in production
-
-Live edge Worker:
-
-- Secret: `OPENAI_API_KEY`
-- Secret: `SUPABASE_SECRET_KEY`
-- Variable: `OPENAI_MODEL`
-
-Frontend public build configuration:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `NEXT_PUBLIC_API_URL`
-
-Variables prefixed with `NEXT_PUBLIC_` are intentionally browser-visible.
-Never expose the Supabase secret, database URL, OpenAI key, or watsonx API key.
-
-## Demo
-
-1. Register or sign in.
-2. Confirm that the dashboard reports **OpenAI active**.
-3. Select **Seed demo**.
-4. Open the generated project and inspect its four pipeline items.
-5. Review the Brief, Script, and Asset analyses.
-6. Open **Tasks** and move a recommendation to **In progress**.
-
-The seed endpoint is authenticated and idempotent per user. The live deployment
-performs real OpenAI text and vision calls and labels the model used.
-
-See [docs/demo-walkthrough.md](docs/demo-walkthrough.md) for the complete
-judging flow and acceptance checks.
-
-## Validation
-
-Backend:
+### Canonical backend
 
 ```bash
 cd backend
 python -m pip_audit -r requirements.txt
 python -m ruff check app tests migrations
-python -m pytest tests -q
+python -m pytest tests -q -p no:cacheprovider
 python -m alembic heads
+python -m alembic upgrade head --sql
 ```
 
-Production edge API:
+### Production edge API
 
 ```bash
 cd backend/cloudflare
@@ -297,56 +633,206 @@ npm run typecheck
 npm run dry-run
 ```
 
-Frontend:
+### Frontend
 
 ```bash
 cd frontend
+npm ci
 npm audit --audit-level=moderate
 npm run lint
+npm test
 npm run typecheck
 npm run build
 ```
 
-Container:
-
-```bash
-docker build --pull -t storyops-backend ./backend
-```
-
-GitHub Actions run the same checks on pushes and pull requests to `main`.
+> On this Windows development host, Next.js can finish compilation and
+> TypeScript validation before an upstream Turbopack process-cleanup
+> `kill EPERM` error. GitHub Actions runs the production build on Linux, matching
+> the Cloudflare/OpenNext release environment.
 
 ## Deployment
 
-- Live API: `backend/cloudflare/wrangler.jsonc` deploys the authenticated REST
-  adapter to
-  [storyops-api.ukexe06.workers.dev](https://storyops-api.ukexe06.workers.dev).
-- Full Python API: import [render.yaml](render.yaml) to deploy FastAPI with real
-  watsonx credentials when a Python container host is available.
-- Frontend: `frontend/wrangler.jsonc` and OpenNext deploy
-  [storyops.ukexe06.workers.dev](https://storyops.ukexe06.workers.dev).
-- Supabase: Alembic revision `b91f4d8a2c10` is applied; Auth production URLs,
-  restrictive table grants, RLS, constraints, and the private `assets` bucket
-  are verified.
+Deployment is intentionally ordered:
 
-## Release status
+1. Apply the database migration.
+2. Deploy and verify the API Worker.
+3. Build and deploy the frontend Worker.
+4. Run public and authenticated smoke tests.
 
-Production release: **v1.2.0**
+See [`docs/deployment.md`](docs/deployment.md) for the complete runbook.
 
-The Cloudflare frontend and API, Supabase Auth/database/private Storage, full
-authenticated browser journey, dependency audits, migrations, tests, and
-Linux OpenNext build are verified. OpenAI is the disclosed production provider;
-the canonical watsonx/Granite path remains available when IBM credentials are
-obtained.
+### Apply the Supabase schema
+
+```bash
+cd backend
+python -m alembic heads
+python -m alembic upgrade head
+```
+
+Current V2 head:
+
+```text
+7e34a290f9de
+```
+
+### Deploy the Cloudflare API Worker
+
+```bash
+cd backend/cloudflare
+npx wrangler whoami
+npm ci
+npm test
+npm run typecheck
+npm run dry-run
+npm run deploy
+```
+
+Required Worker secrets:
+
+```bash
+npx wrangler secret put SUPABASE_SECRET_KEY
+npx wrangler secret put OPENAI_API_KEY
+```
+
+Health check:
+
+```text
+https://storyops-api.ukexe06.workers.dev/health
+```
+
+### Deploy the frontend Worker
+
+```bash
+cd frontend
+npx wrangler whoami
+npm ci
+npm run lint
+npm test
+npm run typecheck
+npm run deploy
+```
+
+Live application:
+
+```text
+https://storyops.ukexe06.workers.dev
+```
+
+### Optional canonical FastAPI deployment
+
+[`render.yaml`](render.yaml) defines a Docker-based Render service with:
+
+- Pre-deploy Alembic migration
+- `/health` readiness check
+- Non-root container runtime
+- Production secret declarations
+
+Deploy this path only with valid IBM watsonx credentials.
+
+---
+
+## Screenshots
+
+### Deployed V2 product experience
+
+<img src="docs/assets/homepage.png" alt="Deployed StoryOps Studio IP Foundry V2 homepage" width="100%" />
+
+| Experience | Link |
+|---|---|
+| Interactive product architecture and capability explorer | [Open live homepage](https://storyops.ukexe06.workers.dev) |
+| Authenticated creative pipeline | Sign in, seed the judging demo, and open the generated project |
+| AI operating console | Open **AI console** inside a project |
+| Replayable enterprise timeline | Open **Timeline** inside a project |
+
+The vector hero and current production screenshot are stored under
+[`docs/assets/`](docs/assets/).
+
+## Demo GIF / video
+
+A public demo GIF or video URL is not yet committed. Until the final media
+artifact is published, use the reproducible
+[`docs/demo-walkthrough.md`](docs/demo-walkthrough.md) three-minute judging
+script against the live deployment.
+
+## Security
+
+Please review [`SECURITY.md`](SECURITY.md) before reporting a vulnerability.
+
+Key controls:
+
+- No server secret is committed or browser-visible.
+- Authenticated resources enforce project ownership.
+- Browser roles cannot query application tables directly.
+- Assets are private and served through expiring signed URLs.
+- Creative content is bounded and treated as untrusted model data.
+- OpenAI API storage is disabled.
+- Provider failures are sanitized and explicitly audited.
+- CI scans dependency vulnerabilities and Git history for secrets.
+
+Do not include real credentials, tokens, private assets, or confidential
+creative material in public issues.
 
 ## Documentation
 
-- [Architecture](docs/architecture.md)
+- [System architecture](docs/architecture.md)
+- [IP Foundry V2 architecture](docs/ip-foundry-v2-architecture.md)
 - [Implementation plan](docs/implementation-plan.md)
-- [Task status](docs/tasks.md)
+- [Task and release gates](docs/tasks.md)
 - [Demo walkthrough](docs/demo-walkthrough.md)
-- [Engineering report](docs/release-report.md)
+- [Engineering release report](docs/release-report.md)
 - [Product and competition research](docs/research.md)
+- [Deployment runbook](docs/deployment.md)
+- [Contributing guide](CONTRIBUTING.md)
+
+## Roadmap
+
+### Next
+
+- Durable global quotas and cost controls
+- Pagination and batched edge reads
+- Automated browser E2E tests
+- Organization membership, RBAC, assignments, comments, and approvals
+- Durable pause/resume/retry execution through an agent/workflow runtime
+
+### Intelligence fabric
+
+- Versioned source records and evidence-addressable chunks
+- Embedding pipeline and authorized semantic search
+- Pattern candidates, duplicate detection, and similarity clustering
+- Persistent Atlas knowledge graph
+- Sandboxed repository generation
+- Impact observations, assumptions, forecasts, and sensitivity analysis
+
+Roadmap items are not presented as live features until their storage,
+execution, security, tests, and UI are complete.
+
+## Contributing
+
+Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) and
+open an issue before proposing a large architecture or provider change.
+
+## Contributors
+
+- [ukexe](https://github.com/ukexe) — creator and maintainer
+
+IBM Bob served as the primary AI SDLC partner for planning, implementation,
+testing, debugging, hardening, and documentation.
 
 ## License
 
-StoryOps Studio is available under the [MIT License](LICENSE).
+StoryOps Studio is released under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+**StoryOps Studio · IP Foundry V2**
+
+Creative evidence → explainable intelligence → accountable action
+
+[Live application](https://storyops.ukexe06.workers.dev) ·
+[Architecture](docs/architecture.md) ·
+[Demo](docs/demo-walkthrough.md) ·
+[Report an issue](https://github.com/ukexe/Storyops_studio/issues)
+
+</div>
