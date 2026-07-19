@@ -6,6 +6,8 @@ StoryOps Studio — IP Foundry V2 is deployed:
 
 - Frontend: <https://storyops.ukexe06.workers.dev>
 - API: <https://storyops-api.ukexe06.workers.dev>
+- GitHub release:
+  <https://github.com/ukexe/Storyops_studio/releases/tag/v2.0.0>
 - Database, Auth, and Storage: Supabase project `namuaqfivfwopaqkdjuw`
 - Schema head: `7e34a290f9de`
 - API Worker version: `d3674f7c-e879-4fd3-a00d-1343d0f05eff`

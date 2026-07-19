@@ -6,7 +6,7 @@
 
 ### An explainable AI operating system for creative production and reusable intelligence
 
-[![Release](https://img.shields.io/badge/release-v2.0.0-111827?style=flat-square)](#release-status)
+[![Release](https://img.shields.io/badge/release-v2.0.0-111827?style=flat-square)](https://github.com/ukexe/Storyops_studio/releases/tag/v2.0.0)
 [![Backend CI](https://img.shields.io/github/actions/workflow/status/ukexe/Storyops_studio/backend-ci.yml?branch=main&label=backend%20CI&style=flat-square)](https://github.com/ukexe/Storyops_studio/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://img.shields.io/github/actions/workflow/status/ukexe/Storyops_studio/frontend-ci.yml?branch=main&label=frontend%20CI&style=flat-square)](https://github.com/ukexe/Storyops_studio/actions/workflows/frontend-ci.yml)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-f38020?logo=cloudflare&logoColor=white&style=flat-square)](https://storyops.ukexe06.workers.dev)
